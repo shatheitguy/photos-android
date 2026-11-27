@@ -228,7 +228,7 @@ private fun RouteHost(entry: NavEntry, nav: Nav) {
     val progress = remember { Animatable(0f) }
     LaunchedEffect(entry.closing) {
         if (entry.closing) progress.animateTo(0f, tween(220, easing = FastOutLinearInEasing))
-        else progress.animateTo(1f, tween(if (slide) 340 else 260, easing = FastOutSlowInEasing))
+        else progress.animateTo(1f, tween(if (slide) 420 else 280, easing = androidx.compose.animation.core.CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
     }
     Box(
         Modifier.fillMaxSize().graphicsLayer {

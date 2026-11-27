@@ -403,6 +403,7 @@ enum class PhotosTab(val label: String) { Library("Library"), Albums("Albums"), 
 @Composable
 fun FloatingTabBar(current: PhotosTab, onSelect: (PhotosTab) -> Unit, modifier: Modifier = Modifier) {
     val c = LocalIos.current
+    val tickCtx = androidx.compose.ui.platform.LocalContext.current
     val container = if (c.dark) Color(0xF22A2A2D) else Color(0xF8FFFFFF)
     val selectedBg = systemAccent()
     val border = if (c.dark) Color(0x26FFFFFF) else Color(0x14000000)
@@ -422,12 +423,12 @@ fun FloatingTabBar(current: PhotosTab, onSelect: (PhotosTab) -> Unit, modifier: 
                 itemWidth = 92.dp,
                 itemHeight = 56.dp,
                 highlight = selectedBg,
-                onSelect = { onSelect(tabs[it]) },
+                onSelect = { Haptics.tick(tickCtx); onSelect(tabs[it]) },
             ) { i, active ->
                 val t = tabs[i]
                 val col = if (active) Color.White else c.label
                 Column(
-                    Modifier.fillMaxSize().clip(CircleShape).tap { onSelect(t) },
+                    Modifier.fillMaxSize().clip(CircleShape).tap { Haptics.tick(tickCtx); onSelect(t) },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
@@ -443,7 +444,7 @@ fun FloatingTabBar(current: PhotosTab, onSelect: (PhotosTab) -> Unit, modifier: 
         Spacer(Modifier.weight(1f))
         Box(
             Modifier.size(64.dp).shadow(14.dp, CircleShape, clip = false).clip(CircleShape).background(container)
-                .border(0.5.dp, border, CircleShape).tap { onSelect(PhotosTab.Search) },
+                .border(0.5.dp, border, CircleShape).tap { Haptics.tick(tickCtx); onSelect(PhotosTab.Search) },
             contentAlignment = Alignment.Center,
         ) {
             Icon(
