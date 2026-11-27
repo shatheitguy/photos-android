@@ -240,6 +240,47 @@ class PhotosStore private constructor(private val app: Context) {
         return null
     }
 
+    // ---------- Copy / move between albums ----------
+
+    /** Copies each item into [relPath] (e.g. "Pictures/Trips/"); Android adds " (1)" to clashing names. */
+    suspend fun copyTo(items: List<Media>, relPath: String): Int = withContext(Dispatchers.IO) {
+        var n = 0
+        val resolver = app.contentResolver
+        for (m in items) {
+            runCatching {
+                val values = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, m.name.ifBlank { "IMG_${System.currentTimeMillis()}" })
+                    put(MediaStore.MediaColumns.MIME_TYPE, m.mime.ifBlank { if (m.isVideo) "video/mp4" else "image/jpeg" })
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, relPath)
+                    put(MediaStore.MediaColumns.DATE_TAKEN, m.dateTaken)
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
+                }
+                val collection = if (m.isVideo) MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                else MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                val uri = resolver.insert(collection, values) ?: error("insert failed")
+                resolver.openInputStream(m.uri)!!.use { input -> resolver.openOutputStream(uri)!!.use { input.copyTo(it) } }
+                values.clear()
+                values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+                n++
+            }
+        }
+        n
+    }
+
+    fun writeRequest(items: List<Media>): IntentSender? =
+        if (Build.VERSION.SDK_INT >= 30) MediaStore.createWriteRequest(app.contentResolver, items.map { it.uri }).intentSender else null
+
+    /** Moves items into [relPath]; call after write access was granted. */
+    suspend fun moveNow(items: List<Media>, relPath: String): Int = withContext(Dispatchers.IO) {
+        items.count { m ->
+            runCatching {
+                val v = ContentValues().apply { put(MediaStore.MediaColumns.RELATIVE_PATH, relPath) }
+                app.contentResolver.update(m.uri, v, null, null) > 0
+            }.getOrDefault(false)
+        }
+    }
+
     // ---------- Save edits ----------
 
     suspend fun saveEdited(original: Media, bitmap: Bitmap): Boolean = withContext(Dispatchers.IO) {

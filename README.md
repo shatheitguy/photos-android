@@ -20,12 +20,16 @@ A gallery app for Android with the look and feel of the new iPhone Photos app �
 - Swipe between photos, pinch or double-tap to zoom, swipe down to close, swipe up for info.
 - **Scrub the thumbnail strip** at the bottom and the photo follows your finger.
 - Floating glass buttons: Share · Favorite · Info · Edit · Delete.
+- **•••** menu: Copy, Duplicate, Hide, Copy to Album, Move to Album, Use As.
+- **Live Text:** when a photo has text in it, tap the text button to select, copy or share it.
+- **Lift the subject:** long-press a person, pet or object to cut it out — Copy, Share or Add Sticker.
 - Plays videos and animated GIFs.
 
 ### Editing
-- Brightness, contrast, saturation and warmth.
+- Adjust with the iPhone set: Auto, Exposure, Brilliance, Highlights, Shadows, Contrast, Brightness, Black Point, Saturation, Vibrance, Warmth, Tint, Sharpness, Definition, Noise Reduction and Vignette — each on a ruler dial.
 - 10 filters: Vivid, Vivid Warm, Vivid Cool, Dramatic (+ Warm/Cool), Mono, Silvertone, Noir.
-- Rotate. Press and hold to compare with the original.
+- **Crop** with handles and ratios (Freeform, Original, Square, 16:9, 4:3, 3:2, 9:16, 3:4), Rotate and Flip.
+- Press and hold the photo to compare with the original.
 - Edits are saved as a **copy** in `Pictures/Photos Edits` — originals are never changed.
 
 ### Albums

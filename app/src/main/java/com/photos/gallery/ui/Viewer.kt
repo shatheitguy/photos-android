@@ -120,6 +120,24 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
     var dragY by remember { mutableFloatStateOf(0f) }
     var showInfo by remember { mutableStateOf(false) }
     val trash = ref.kind == Kind.Trash
+    val ctx = LocalContext.current
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    LaunchedEffect(Unit) { Vision.prepare(ctx) }
+    // A plain (software) copy of the photo on screen, used for Live Text and lifting the subject.
+    var still by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var liveText by remember { mutableStateOf<String?>(null) }
+    var showText by remember { mutableStateOf(false) }
+    var albumMove by remember { mutableStateOf<Boolean?>(null) }
+    var lifting by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    LaunchedEffect(current.id) {
+        still = null
+        liveText = null
+        if (current.isVideo || current.isAnimated || trash) return@LaunchedEffect
+        kotlinx.coroutines.delay(350) // wait until swiping settles
+        val b = ImageLoader.full(ctx, current.uri, 2048, software = true) ?: return@LaunchedEffect
+        still = b
+        liveText = Vision.text(b)
+    }
     SystemBarsVisible(chrome)
     val bg by animateColorAsState(if (chrome) c.bg else Color.Black, label = "viewerBg")
     val fade = (abs(dragY) / 700f).coerceIn(0f, 1f)
@@ -142,15 +160,28 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
                     onDrag = { dragY = it },
                     onDismiss = onClose,
                     onSwipeUp = { if (!trash) showInfo = true },
+                    onLongPress = {
+                        val b = still
+                        if (page == pager.currentPage && b != null) {
+                            haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                            lifting = b
+                        }
+                    },
                 )
             }
         }
         val showChrome = chrome && fade < 0.05f
         AnimatedVisibility(showChrome, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.TopCenter)) {
-            ViewerTopBar(current, trash, onBack = onClose, onEdit = { nav.push(Route.Editor(current)) })
+            ViewerTopBar(current, trash, onBack = onClose, onAlbum = { albumMove = it })
         }
         AnimatedVisibility(showChrome, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.BottomCenter)) {
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 6.dp)) {
+                if (liveText != null) {
+                    Row(Modifier.fillMaxWidth().padding(end = 18.dp, bottom = 10.dp)) {
+                        Spacer(Modifier.weight(1f))
+                        ViewerGlassCircle(LiveTextIcon) { showText = true }
+                    }
+                }
                 if (!trash && items.size > 1) Filmstrip(items, pager)
                 Spacer(Modifier.height(10.dp))
                 Row(
@@ -179,6 +210,17 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
                     }
                 }
             }
+        }
+    }
+    lifting?.let { b -> LiftOverlay(b) { lifting = null } }
+    albumMove?.let { move ->
+        ModalBottomSheet(onDismissRequest = { albumMove = null }, containerColor = c.grouped) {
+            AlbumPicker(move, listOf(current)) { albumMove = null }
+        }
+    }
+    if (showText) {
+        ModalBottomSheet(onDismissRequest = { showText = false }, containerColor = c.grouped) {
+            LiveTextPanel(liveText.orEmpty()) { showText = false }
         }
     }
     if (showInfo) {
@@ -239,7 +281,7 @@ private fun ViewerGlassText(text: String, color: Color, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ViewerTopBar(m: Media, trash: Boolean, onBack: () -> Unit, onEdit: () -> Unit) {
+private fun ViewerTopBar(m: Media, trash: Boolean, onBack: () -> Unit, onAlbum: (Boolean) -> Unit) {
     val c = LocalIos.current
     val (bg, border, fg) = glassColors()
     Box(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 6.dp).height(52.dp)) {
@@ -252,14 +294,8 @@ private fun ViewerTopBar(m: Media, trash: Boolean, onBack: () -> Unit, onEdit: (
                 Text(Fmt.time(m.dateTaken), fontSize = 13.sp, color = c.secondary)
             }
         }
-        if (!trash && !m.isVideo && !m.isAnimated && m.id >= 0) {
-            Box(
-                Modifier.align(Alignment.CenterEnd).height(46.dp).shadow(10.dp, CircleShape, clip = false).clip(CircleShape)
-                    .background(bg).border(0.5.dp, border, CircleShape).tap(onClick = onEdit).padding(horizontal = 20.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("Edit", color = fg, fontSize = 17.sp, fontWeight = FontWeight.Medium)
-            }
+        if (!trash && m.id >= 0) {
+            Box(Modifier.align(Alignment.CenterEnd)) { ViewerMoreButton(m, bg, border, fg, onAlbum) }
         }
     }
 }
@@ -274,7 +310,8 @@ private fun Filmstrip(items: List<Media>, pager: PagerState) {
     val itemW = 30.dp
     val dragged by listState.interactionSource.collectIsDraggedAsState()
     var scrubbing by remember { mutableStateOf(false) }
-    LaunchedEffect(dragged) { if (dragged) scrubbing = true }
+    // Scrubbing starts when a finger drags the strip and always ends once the strip stops,
+    // decided in one place so a quick flick can't leave it stuck (which pulled the photo back after every swipe).
     LaunchedEffect(listState) {
         snapshotFlow {
             val info = listState.layoutInfo
@@ -282,8 +319,9 @@ private fun Filmstrip(items: List<Media>, pager: PagerState) {
             val idx = info.visibleItemsInfo.minByOrNull { abs(it.offset + it.size / 2 - center) }?.index ?: -1
             Triple(idx, listState.isScrollInProgress, dragged)
         }.collect { (idx, scrolling, isDragged) ->
-            if (scrubbing && idx >= 0 && idx != pager.currentPage) pager.scrollToPage(idx)
-            if (scrubbing && !scrolling && !isDragged) scrubbing = false
+            if (isDragged) scrubbing = true
+            if (scrubbing && idx >= 0 && idx != pager.currentPage && !pager.isScrollInProgress) pager.scrollToPage(idx)
+            if (!scrolling && !isDragged) scrubbing = false
         }
     }
     LaunchedEffect(pager.currentPage) {
@@ -362,6 +400,7 @@ fun MediaPage(
     onDrag: (Float) -> Unit,
     onDismiss: () -> Unit,
     onSwipeUp: () -> Unit,
+    onLongPress: () -> Unit = {},
 ) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -391,12 +430,14 @@ fun MediaPage(
     val dragCb = rememberUpdatedState(onDrag)
     val dismissCb = rememberUpdatedState(onDismiss)
     val upCb = rememberUpdatedState(onSwipeUp)
+    val longCb = rememberUpdatedState(onLongPress)
 
     Box(
         Modifier.fillMaxSize()
             .pointerInput(m.id) {
                 detectTapGestures(
                     onTap = { tapCb.value() },
+                    onLongPress = { if (!m.isVideo && scale < 1.05f && dragY == 0f) longCb.value() },
                     onDoubleTap = { p ->
                         if (!m.isVideo) {
                             val target = if (scale > 1.05f) 1f else 2.5f

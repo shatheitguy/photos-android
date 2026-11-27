@@ -67,6 +67,48 @@ class MediaActions(
     var onUnlocked: (() -> Unit)? = null
     var unlocked = false
 
+    /** Runs when Android's permission prompt (write / move) comes back approved. */
+    var afterSender: (() -> Unit)? = null
+    private val io = CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Main)
+
+    private fun say(msg: String) = android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_SHORT).show()
+
+    fun duplicate(items: List<Media>) {
+        if (items.isEmpty()) return
+        io.launch {
+            val n = items.groupBy { it.relPath }.entries.sumOf { (rel, list) -> store.copyTo(list, rel.ifBlank { "Pictures/" }) }
+            store.requestReload()
+            say(if (n > 0) "Duplicated" else "Couldn't duplicate")
+        }
+    }
+
+    fun copyTo(items: List<Media>, relPath: String, album: String) {
+        if (items.isEmpty()) return
+        io.launch {
+            val n = store.copyTo(items, relPath)
+            store.requestReload()
+            say(if (n > 0) "Copied to $album" else "Couldn't copy")
+        }
+    }
+
+    fun moveTo(items: List<Media>, relPath: String, album: String) {
+        if (items.isEmpty()) return
+        val go = {
+            io.launch {
+                val n = store.moveNow(items, relPath)
+                store.requestReload()
+                say(if (n > 0) "Moved to $album" else "Couldn't move")
+            }
+            Unit
+        }
+        val sender = runCatching { store.writeRequest(items) }.getOrNull()
+        if (sender == null) { go(); return }
+        perform {
+            afterSender = go
+            launchSender(sender)
+        }
+    }
+
     /** An iOS-style confirmation card waiting for an answer. */
     class Confirm(val message: String, val button: String, val destructive: Boolean, val run: () -> Unit)
     var confirm by mutableStateOf<Confirm?>(null)
@@ -210,7 +252,11 @@ class MediaActions(
 fun rememberMediaActions(store: PhotosStore): MediaActions {
     val ctx = LocalContext.current
     val holder = remember { arrayOfNulls<MediaActions>(1) }
-    val senderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+    val senderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { r ->
+        val a = holder[0]
+        val then = a?.afterSender
+        a?.afterSender = null
+        if (r.resultCode == Activity.RESULT_OK) then?.invoke()
         store.requestReload()
     }
     val unlockLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
