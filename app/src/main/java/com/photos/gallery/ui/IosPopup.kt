@@ -76,7 +76,7 @@ fun IosPopupMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<PopupItem
     visible.targetState = expanded
     // A very light tap as the menu pops up, like iOS.
     val view = androidx.compose.ui.platform.LocalView.current
-    LaunchedEffect(expanded) { if (expanded) view.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK) }
+    LaunchedEffect(expanded) { if (expanded) Haptics.detent(view.context) }
     // Where the anchor is on screen.
     var anchor by remember { mutableStateOf<Rect?>(null) }
     Spacer(

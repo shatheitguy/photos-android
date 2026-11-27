@@ -163,7 +163,7 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
                     onLongPress = {
                         val b = still
                         if (page == pager.currentPage && b != null) {
-                            haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                            Haptics.detent(ctx)
                             lifting = b
                         }
                     },

@@ -21,11 +21,18 @@ object Haptics {
         return v
     }
 
-    /** The lightest tick: scrubbing photos, turning the editor dial. */
-    fun tick(ctx: Context) = play(ctx, 0.3f, 5, 18)
+    private var lastTick = 0L
 
-    /** A little firmer: reaching zero or the end of the dial. */
-    fun detent(ctx: Context) = play(ctx, 0.6f, 8, 45)
+    /** The lightest tick: scrubbing photos, turning the editor dial. At most one every 45 ms, so it never buzzes. */
+    fun tick(ctx: Context) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastTick < 45) return
+        lastTick = now
+        play(ctx, 0.06f, 2, 3)
+    }
+
+    /** A little firmer: reaching zero or the end of the dial, or opening a menu. */
+    fun detent(ctx: Context) = play(ctx, 0.2f, 3, 10)
 
     private fun play(ctx: Context, scale: Float, ms: Long, amplitude: Int) {
         val v = vibrator(ctx) ?: return
@@ -36,7 +43,8 @@ object Haptics {
             } else if (v.hasAmplitudeControl()) {
                 v.vibrate(VibrationEffect.createOneShot(ms, amplitude))
             } else {
-                v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+                // No strength control: keep the pulse extremely short so it still feels light.
+                v.vibrate(VibrationEffect.createOneShot(if (scale < 0.1f) 1 else 2, VibrationEffect.DEFAULT_AMPLITUDE))
             }
         }
     }

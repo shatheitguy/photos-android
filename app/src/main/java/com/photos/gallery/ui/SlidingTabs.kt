@@ -37,6 +37,7 @@ fun SlidingTabs(
 ) {
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
+    val tabCtx = androidx.compose.ui.platform.LocalContext.current
     val wPx = with(LocalDensity.current) { itemWidth.toPx() }
     val pos = remember { Animatable(selected.coerceAtLeast(0).toFloat()) }
     val currentSelected by rememberUpdatedState(selected)
@@ -72,7 +73,7 @@ fun SlidingTabs(
                         val n = pos.value.roundToInt().coerceIn(0, count - 1)
                         if (n != lastNearest) {
                             lastNearest = n
-                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            Haptics.tick(tabCtx)
                         }
                     }
                 },

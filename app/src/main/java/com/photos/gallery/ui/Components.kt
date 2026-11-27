@@ -242,6 +242,10 @@ fun MediaGrid(
     val idIndex = remember(items) { HashMap<Long, Int>(items.size).also { map -> items.forEachIndexed { i, m -> map[m.id] = i } } }
     val now = remember { System.currentTimeMillis() }
     val aspectGrid = AppPrefs.get(androidx.compose.ui.platform.LocalContext.current).flag(PrefKeys.AspectGrid, false)
+    val gridCtx = androidx.compose.ui.platform.LocalContext.current
+    // Long-press (without dragging) opens the iPhone photo menu.
+    var menuFor by remember { mutableStateOf<Media?>(null) }
+    var addTo by remember { mutableStateOf<Media?>(null) }
 
     fun indexAt(x: Float, y: Float): Int {
         val info = state.layoutInfo
@@ -262,6 +266,7 @@ fun MediaGrid(
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
             var pos = down.position
+            var swiped = false
             val decided = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
                 while (true) {
                     val ev = awaitPointerEvent()
@@ -271,6 +276,7 @@ fun MediaGrid(
                     if (selection.active && abs(d.x) > slop && abs(d.x) > abs(d.y)) {
                         ch.consume()
                         pos = ch.position
+                        swiped = true
                         return@withTimeoutOrNull true
                     }
                     if (d.getDistance() > slop) return@withTimeoutOrNull false
@@ -283,8 +289,26 @@ fun MediaGrid(
             val start = indexAt(down.position.x, down.position.y).takeIf { it >= 0 }
                 ?: indexAt(pos.x, pos.y).takeIf { it >= 0 }
                 ?: return@awaitEachGesture
+            if (!swiped && !selection.active && !trash) {
+                // Held still: show the photo menu. If the finger then moves, switch to drag-select instead.
+                menuFor = items[start]
+                Haptics.detent(gridCtx)
+                var moved = false
+                while (true) {
+                    val ev = awaitPointerEvent()
+                    val ch = ev.changes.firstOrNull { it.id == down.id } ?: break
+                    if (!ch.pressed) break
+                    if ((ch.position - down.position).getDistance() > slop * 2) {
+                        moved = true
+                        pos = ch.position
+                        break
+                    }
+                }
+                if (!moved) return@awaitEachGesture
+                menuFor = null
+            }
             if (!selection.active) selection.active = true
-            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            Haptics.tick(gridCtx)
             val base = selection.ids
             val adding = items[start].id !in base
             var lastEnd = -1
@@ -328,6 +352,8 @@ fun MediaGrid(
         }
     }
     val pinch = if (onColumns != null) Modifier.pinchToColumns(columns, ColumnLevels, onColumns) else Modifier
+    menuFor?.let { m -> PhotoContextMenu(m, onDismiss = { menuFor = null }, onAddTo = { addTo = m }) }
+    addTo?.let { m -> AddToAlbumSheet(m) { addTo = null } }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(shown),
