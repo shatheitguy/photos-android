@@ -73,7 +73,7 @@ fun SlidingTabs(
                         val n = pos.value.roundToInt().coerceIn(0, count - 1)
                         if (n != lastNearest) {
                             lastNearest = n
-                            Haptics.tick(tabCtx)
+                            Unit
                         }
                     }
                 },

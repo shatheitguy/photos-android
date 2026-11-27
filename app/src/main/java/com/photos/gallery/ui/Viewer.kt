@@ -152,7 +152,6 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
     LaunchedEffect(pager.currentPage) {
         if (pager.currentPage != lastPage) {
             lastPage = pager.currentPage
-            Haptics.tick(ctx)
         }
     }
     SystemBarsVisible(chrome)
@@ -347,7 +346,7 @@ private fun Filmstrip(items: List<Media>, pager: PagerState) {
             if (isDragged) scrubbing = true
             if (scrubbing && idx >= 0 && idx != lastTick) {
                 // A very light tick for each photo passed while scrubbing, like iOS.
-                if (lastTick >= 0) Haptics.tick(view.context)
+                if (lastTick >= 0) Unit
                 lastTick = idx
             }
             if (!scrubbing) lastTick = idx

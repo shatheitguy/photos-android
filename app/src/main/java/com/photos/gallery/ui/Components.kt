@@ -311,7 +311,6 @@ fun MediaGrid(
                 menuFor = null
             }
             if (!selection.active) selection.active = true
-            Haptics.tick(gridCtx)
             val base = selection.ids
             val adding = items[start].id !in base
             var lastEnd = -1
@@ -423,12 +422,12 @@ fun FloatingTabBar(current: PhotosTab, onSelect: (PhotosTab) -> Unit, modifier: 
                 itemWidth = 92.dp,
                 itemHeight = 56.dp,
                 highlight = selectedBg,
-                onSelect = { Haptics.tick(tickCtx); onSelect(tabs[it]) },
+                onSelect = { onSelect(tabs[it]) },
             ) { i, active ->
                 val t = tabs[i]
                 val col = if (active) Color.White else c.label
                 Column(
-                    Modifier.fillMaxSize().clip(CircleShape).tap { Haptics.tick(tickCtx); onSelect(t) },
+                    Modifier.fillMaxSize().clip(CircleShape).tap { onSelect(t) },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
@@ -444,7 +443,7 @@ fun FloatingTabBar(current: PhotosTab, onSelect: (PhotosTab) -> Unit, modifier: 
         Spacer(Modifier.weight(1f))
         Box(
             Modifier.size(64.dp).shadow(14.dp, CircleShape, clip = false).clip(CircleShape).background(container)
-                .border(0.5.dp, border, CircleShape).tap { Haptics.tick(tickCtx); onSelect(PhotosTab.Search) },
+                .border(0.5.dp, border, CircleShape).tap { onSelect(PhotosTab.Search) },
             contentAlignment = Alignment.Center,
         ) {
             Icon(
