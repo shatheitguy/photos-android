@@ -127,12 +127,14 @@ fun SidebarRow(
 /** A sidebar section with a title that folds it away, like the sections in the iPad sidebar. */
 fun LazyListScope.sidebarSection(key: String, title: String, rows: @Composable ColumnScope.() -> Unit) {
     item(key = "h-$key") {
-        var open by rememberSaveable(key) { mutableStateOf(true) }
+        // Remembered after the app closes (same setting as the section on the phone layout).
+        val prefs = AppPrefs.get(androidx.compose.ui.platform.LocalContext.current)
+        val open = !prefs.flag("collapsed_$title", false)
         val c = LocalIos.current
         val turn by animateFloatAsState(if (open) 90f else 0f, spring(stiffness = 600f), label = "chev")
         Column {
             Row(
-                Modifier.fillMaxWidth().tap { open = !open }.padding(start = 22.dp, end = 20.dp, top = 18.dp, bottom = 6.dp),
+                Modifier.fillMaxWidth().tap { prefs.setFlag("collapsed_$title", open) }.padding(start = 22.dp, end = 20.dp, top = 18.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = c.label, modifier = Modifier.weight(1f))
