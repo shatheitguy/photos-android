@@ -154,7 +154,28 @@ fun GridCell(
             interactionSource = src, indication = null, onLongClick = onLongClick, onClick = onClick,
         )
     ) {
-        if (aspect) Thumb(m, Modifier.fillMaxSize(), size, ContentScale.Fit) else Thumb(m, Modifier.fillMaxSize(), size)
+        if (aspect) {
+            // Aspect Ratio Grid: shrink to the photo's own shape so labels and the tick sit on the photo, like iOS.
+            val bmp = rememberThumbnail(m.uri, size)
+            val ratio = when {
+                bmp != null && bmp.height > 0 -> bmp.width.toFloat() / bmp.height
+                m.width > 0 && m.height > 0 -> m.width.toFloat() / m.height
+                else -> 1f
+            }.coerceIn(0.3f, 3.5f)
+            Box(Modifier.align(Alignment.Center).padding(1.dp).aspectRatio(ratio, matchHeightConstraintsFirst = ratio < 1f)) {
+                Thumb(m, Modifier.fillMaxSize(), size)
+                CellOverlays(m, favorite, selecting, selected, trashDays)
+            }
+        } else {
+            Thumb(m, Modifier.fillMaxSize(), size)
+            CellOverlays(m, favorite, selecting, selected, trashDays)
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.CellOverlays(m: Media, favorite: Boolean, selecting: Boolean, selected: Boolean, trashDays: Int?) {
+    run {
         if (m.isVideo || favorite || trashDays != null) {
             Box(
                 Modifier.fillMaxSize().background(

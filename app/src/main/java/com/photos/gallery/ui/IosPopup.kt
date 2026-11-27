@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,9 +71,12 @@ fun IosPopupMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<PopupItem
     val placement = remember(d) {
         with(d) { MenuPlacement(gap = 8.dp.roundToPx(), side = 12.dp.roundToPx(), top = 44.dp.roundToPx(), bottom = 24.dp.roundToPx()) }
     }
-    val bg = if (c.dark) Color(0xFF2A2A2D) else Color(0xFFF9F9F9)
-    val band = if (c.dark) Color(0xFF161618) else Color(0xFFE3E3E8)
-    val line = if (c.dark) Color(0x33FFFFFF) else Color(0x1F000000)
+    // Same see-through glass as the round buttons, with the same thin light edge.
+    val bg = if (c.dark) Color(0xE02A2A2D) else Color(0xEBFFFFFF)
+    val edge = if (c.dark) Color(0x26FFFFFF) else Color(0x14000000)
+    val band = if (c.dark) Color(0x14FFFFFF) else Color(0x0F000000)
+    val line = if (c.dark) Color(0x1FFFFFFF) else Color(0x14000000)
+    val shape = RoundedCornerShape(24.dp)
     val anyChecked = items.any { it.checked }
     Popup(popupPositionProvider = placement, onDismissRequest = onDismiss, properties = PopupProperties(focusable = true)) {
         AnimatedVisibility(
@@ -82,14 +86,15 @@ fun IosPopupMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<PopupItem
         ) {
             Column(
                 Modifier.padding(6.dp).width(252.dp)
-                    .shadow(22.dp, RoundedCornerShape(16.dp), clip = false)
-                    .clip(RoundedCornerShape(16.dp)).background(bg)
+                    .shadow(22.dp, shape, clip = false)
+                    .clip(shape).background(bg).border(0.5.dp, edge, shape)
+                    .padding(vertical = 4.dp)
                     .heightIn(max = 520.dp).verticalScroll(rememberScrollState()),
             ) {
                 items.forEachIndexed { i, it ->
                     if (i > 0) {
-                        if (it.group) Box(Modifier.fillMaxWidth().height(8.dp).background(band))
-                        else Box(Modifier.fillMaxWidth().height(0.5.dp).background(line))
+                        if (it.group) Box(Modifier.padding(vertical = 4.dp).fillMaxWidth().height(6.dp).background(band))
+                        else Box(Modifier.padding(start = if (anyChecked) 40.dp else 16.dp).fillMaxWidth().height(0.5.dp).background(line))
                     }
                     val col = if (it.destructive) c.red else c.label
                     Row(
