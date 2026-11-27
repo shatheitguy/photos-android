@@ -21,9 +21,11 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.geometry.Offset
@@ -199,10 +201,10 @@ fun EditorScreen(media: Media, onClose: () -> Unit) {
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Row(
-                Modifier.fillMaxWidth().height(50.dp).padding(horizontal = 16.dp),
+                Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Cancel", color = Color.White, fontSize = 17.sp, modifier = Modifier.tap(onClick = onClose))
+                EditorGlassCircle(onClick = onClose) { Icon(CloseIcon, null, tint = Color.White, modifier = Modifier.size(20.dp)) }
                 Spacer(Modifier.weight(1f))
                 Text(
                     when (tab) {
@@ -213,11 +215,17 @@ fun EditorScreen(media: Media, onClose: () -> Unit) {
                     color = Color.White.copy(alpha = 0.7f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp,
                 )
                 Spacer(Modifier.weight(1f))
-                Text(
-                    "Done",
-                    color = if (changed) Yellow else Color.Gray,
-                    fontSize = 17.sp, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.tap(enabled = changed && !saving) {
+                if (changed) {
+                    EditorGlassPill("Revert") {
+                        filter = 0
+                        for (i in adj.indices) adj[i] = 0f
+                        rotation = 0; flip = false; crop = Crop(); ratio = 0
+                    }
+                    Spacer(Modifier.width(10.dp))
+                }
+                EditorDoneButton(
+                    enabled = changed && !saving,
+                    onClick = {
                         saving = true
                         scope.launch {
                             val src = ImageLoader.full(ctx, media.uri, 3072, software = true) ?: preview
@@ -297,10 +305,16 @@ fun EditorScreen(media: Media, onClose: () -> Unit) {
                 }
             }
 
-            Row(Modifier.fillMaxWidth().height(64.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                EditorTab(IosIcons.Sliders, "Adjust", tab == 0) { tab = 0 }
-                EditorTab(IosIcons.Filters, "Filters", tab == 1) { tab = 1 }
-                EditorTab(IosIcons.Crop, "Crop", tab == 2) { tab = 2 }
+            Box(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
+                Row(
+                    Modifier.shadow(12.dp, CircleShape, clip = false).clip(CircleShape).background(Color(0xE62A2A2D))
+                        .border(0.5.dp, Color(0x26FFFFFF), CircleShape).padding(5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    EditorTab(IosIcons.Sliders, "Adjust", tab == 0) { tab = 0 }
+                    EditorTab(IosIcons.Filters, "Filters", tab == 1) { tab = 1 }
+                    EditorTab(IosIcons.Crop, "Crop", tab == 2) { tab = 2 }
+                }
             }
         }
         if (saving) {
@@ -380,10 +394,57 @@ private fun FilterStrip(preview: Bitmap?, selected: Int, onSelect: (Int) -> Unit
 
 @Composable
 private fun EditorTab(icon: ImageVector, label: String, selected: Boolean, onClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.tap(onClick = onClick).padding(6.dp)) {
-        Icon(icon, null, tint = if (selected) Yellow else Color.White.copy(alpha = 0.7f), modifier = Modifier.size(24.dp))
-        Text(label, fontSize = 10.sp, color = if (selected) Yellow else Color.White.copy(alpha = 0.7f))
+    val bg by androidx.compose.animation.animateColorAsState(if (selected) Color(0xFF111113) else Color.Transparent, label = "tab")
+    Column(
+        Modifier.width(88.dp).height(54.dp).clip(CircleShape).background(bg).tap(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(icon, null, tint = if (selected) Yellow else Color.White, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.height(2.dp))
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (selected) Yellow else Color.White)
     }
+}
+
+/** Round glass button, like the iOS 26 editor's close button. */
+@Composable
+private fun EditorGlassCircle(onClick: () -> Unit, content: @Composable () -> Unit) {
+    Box(
+        Modifier.size(46.dp).shadow(10.dp, CircleShape, clip = false).clip(CircleShape).background(Color(0xE62A2A2D))
+            .border(0.5.dp, Color(0x26FFFFFF), CircleShape).tap(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { content() }
+}
+
+@Composable
+private fun EditorGlassPill(text: String, onClick: () -> Unit) {
+    Box(
+        Modifier.height(46.dp).shadow(10.dp, CircleShape, clip = false).clip(CircleShape).background(Color(0xE62A2A2D))
+            .border(0.5.dp, Color(0x26FFFFFF), CircleShape).tap(onClick = onClick).padding(horizontal = 18.dp),
+        contentAlignment = Alignment.Center,
+    ) { Text(text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Medium) }
+}
+
+/** The round check: glass and dim until there's a change, then filled yellow. */
+@Composable
+private fun EditorDoneButton(enabled: Boolean, onClick: () -> Unit) {
+    val bg by androidx.compose.animation.animateColorAsState(if (enabled) Yellow else Color(0xE62A2A2D), label = "done")
+    Box(
+        Modifier.size(46.dp).shadow(10.dp, CircleShape, clip = false).clip(CircleShape).background(bg)
+            .border(0.5.dp, if (enabled) Color.Transparent else Color(0x26FFFFFF), CircleShape).tap(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            androidx.compose.material.icons.Icons.Filled.Check, null,
+            tint = if (enabled) Color.Black else Color.White.copy(alpha = 0.35f), modifier = Modifier.size(24.dp),
+        )
+    }
+}
+
+private val CloseIcon: ImageVector by lazy {
+    ImageVector.Builder("close", 24.dp, 24.dp, 24f, 24f).apply {
+        addPath(PathParser().parsePathString("M6 6 L18 18 M18 6 L6 18").toNodes(), stroke = SolidColor(Color.White), strokeLineWidth = 2.2f, strokeLineCap = androidx.compose.ui.graphics.StrokeCap.Round)
+    }.build()
 }
 
 @Composable

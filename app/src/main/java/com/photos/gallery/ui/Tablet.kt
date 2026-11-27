@@ -105,7 +105,7 @@ fun SidebarRow(
     onClick: () -> Unit,
 ) {
     val c = LocalIos.current
-    val bg by animateColorAsState(if (selected) c.accent else Color.Transparent, label = "sideBg")
+    val bg by animateColorAsState(if (selected) systemAccent() else Color.Transparent, label = "sideBg")
     val fg = if (selected) Color.White else c.label
     Row(
         Modifier.padding(horizontal = 10.dp).fillMaxWidth().height(44.dp).clip(RoundedCornerShape(10.dp))
