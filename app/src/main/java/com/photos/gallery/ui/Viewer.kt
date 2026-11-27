@@ -138,6 +138,14 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
         still = b
         liveText = Vision.text(b)
     }
+    // A light tick each time a swipe lands on the next or previous photo.
+    var lastPage by remember { mutableIntStateOf(pager.currentPage) }
+    LaunchedEffect(pager.currentPage) {
+        if (pager.currentPage != lastPage) {
+            lastPage = pager.currentPage
+            Haptics.tick(ctx)
+        }
+    }
     SystemBarsVisible(chrome)
     val bg by animateColorAsState(if (chrome) c.bg else Color.Black, label = "viewerBg")
     val fade = (abs(dragY) / 700f).coerceIn(0f, 1f)

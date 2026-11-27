@@ -28,7 +28,7 @@ object Haptics {
         val now = android.os.SystemClock.uptimeMillis()
         if (now - lastTick < 45) return
         lastTick = now
-        play(ctx, 0.5f, 4, 30)
+        play(ctx, 0.7f, 5, 50)
     }
 
     /** Long-pressing a photo: light, but clearly felt. */
@@ -47,7 +47,7 @@ object Haptics {
     }
 
     /** A little firmer: reaching zero or the end of the dial, or opening a menu. */
-    fun detent(ctx: Context) = play(ctx, 0.7f, 6, 55)
+    fun detent(ctx: Context) = play(ctx, 0.85f, 7, 80)
 
     private fun play(ctx: Context, scale: Float, ms: Long, amplitude: Int) {
         val v = vibrator(ctx) ?: return
@@ -59,7 +59,7 @@ object Haptics {
                 v.vibrate(VibrationEffect.createOneShot(ms, amplitude))
             } else {
                 // No strength control: keep the pulse extremely short so it still feels light.
-                v.vibrate(VibrationEffect.createOneShot(if (scale < 0.6f) 3 else 5, VibrationEffect.DEFAULT_AMPLITUDE))
+                v.vibrate(VibrationEffect.createOneShot(if (scale < 0.8f) 4 else 6, VibrationEffect.DEFAULT_AMPLITUDE))
             }
         }
     }
