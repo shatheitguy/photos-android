@@ -284,7 +284,7 @@ fun MediaGrid(
                 ?: indexAt(pos.x, pos.y).takeIf { it >= 0 }
                 ?: return@awaitEachGesture
             if (!selection.active) selection.active = true
-            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             val base = selection.ids
             val adding = items[start].id !in base
             var lastEnd = -1

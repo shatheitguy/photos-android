@@ -302,6 +302,7 @@ private fun ToolCircle(t: Adjustment, v: Float, selected: Boolean, modifier: Mod
 private fun Ruler(value: Float, positive: Boolean, onChange: (Float) -> Unit) {
     val haptics = LocalHapticFeedback.current
     val density = LocalDensity.current
+    val view = androidx.compose.ui.platform.LocalView.current
     val gap = with(density) { 7.dp.toPx() } // one step = 0.02
     val current by rememberUpdatedState(value)
     val min = if (positive) 0f else -1f
@@ -318,6 +319,9 @@ private fun Ruler(value: Float, positive: Boolean, onChange: (Float) -> Unit) {
                     val snapped = if (abs(nv) < 0.015f) 0f else nv
                     if ((old != 0f && snapped == 0f) || (snapped == 1f && old != 1f) || (snapped == min && old != min)) {
                         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    } else if ((old * 50).roundToInt() != (snapped * 50).roundToInt()) {
+                        // A very light tick for every mark the dial passes, like iOS.
+                        view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
                     }
                     onChange(snapped)
                 }

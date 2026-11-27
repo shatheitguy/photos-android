@@ -310,6 +310,8 @@ private fun Filmstrip(items: List<Media>, pager: PagerState) {
     val itemW = 30.dp
     val dragged by listState.interactionSource.collectIsDraggedAsState()
     var scrubbing by remember { mutableStateOf(false) }
+    val view = androidx.compose.ui.platform.LocalView.current
+    var lastTick by remember { mutableIntStateOf(-1) }
     // Scrubbing starts when a finger drags the strip and always ends once the strip stops,
     // decided in one place so a quick flick can't leave it stuck (which pulled the photo back after every swipe).
     LaunchedEffect(listState) {
@@ -320,6 +322,12 @@ private fun Filmstrip(items: List<Media>, pager: PagerState) {
             Triple(idx, listState.isScrollInProgress, dragged)
         }.collect { (idx, scrolling, isDragged) ->
             if (isDragged) scrubbing = true
+            if (scrubbing && idx >= 0 && idx != lastTick) {
+                // A very light tick for each photo passed while scrubbing, like iOS.
+                if (lastTick >= 0) view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                lastTick = idx
+            }
+            if (!scrubbing) lastTick = idx
             if (scrubbing && idx >= 0 && idx != pager.currentPage && !pager.isScrollInProgress) pager.scrollToPage(idx)
             if (!scrolling && !isDragged) scrubbing = false
         }

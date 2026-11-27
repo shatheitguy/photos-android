@@ -25,6 +25,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -65,14 +67,28 @@ private class MenuPlacement(private val gap: Int, private val side: Int, private
 fun IosPopupMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<PopupItem>) {
     val visible = remember { MutableTransitionState(false) }
     visible.targetState = expanded
+    // A very light tap as the menu pops up, like iOS.
+    val view = androidx.compose.ui.platform.LocalView.current
+    LaunchedEffect(expanded) { if (expanded) view.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK) }
+    var anchor by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+    Spacer(Modifier.size(0.dp).onGloballyPositioned { anchor = it.parentLayoutCoordinates?.boundsInWindow() })
     if (!visible.currentState && !visible.targetState) return
     val c = LocalIos.current
     val d = LocalDensity.current
+    val windowH = with(d) { androidx.compose.ui.platform.LocalView.current.rootView.height.toFloat() }
+    val room = anchor?.let { a ->
+        with(d) {
+            val below = windowH - a.bottom - 8.dp.toPx() - 24.dp.toPx()
+            val above = a.top - 8.dp.toPx() - 44.dp.toPx()
+            maxOf(below, above).toDp()
+        }
+    } ?: 520.dp
+    val maxH = room.coerceIn(180.dp, 520.dp)
     val placement = remember(d) {
         with(d) { MenuPlacement(gap = 8.dp.roundToPx(), side = 12.dp.roundToPx(), top = 44.dp.roundToPx(), bottom = 24.dp.roundToPx()) }
     }
     // Same see-through glass as the round buttons, with the same thin light edge.
-    val bg = if (c.dark) Color(0xE02A2A2D) else Color(0xEBFFFFFF)
+    val bg = if (c.dark) Color(0xF52A2A2D) else Color(0xFAFFFFFF)
     val edge = if (c.dark) Color(0x26FFFFFF) else Color(0x14000000)
     val band = if (c.dark) Color(0x14FFFFFF) else Color(0x0F000000)
     val line = if (c.dark) Color(0x1FFFFFFF) else Color(0x14000000)
@@ -89,7 +105,7 @@ fun IosPopupMenu(expanded: Boolean, onDismiss: () -> Unit, items: List<PopupItem
                     .shadow(22.dp, shape, clip = false)
                     .clip(shape).background(bg).border(0.5.dp, edge, shape)
                     .padding(vertical = 4.dp)
-                    .heightIn(max = 520.dp).verticalScroll(rememberScrollState()),
+                    .heightIn(max = maxH).verticalScroll(rememberScrollState()),
             ) {
                 items.forEachIndexed { i, it ->
                     if (i > 0) {
