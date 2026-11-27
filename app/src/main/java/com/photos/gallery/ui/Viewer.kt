@@ -147,11 +147,12 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
         liveText = read?.text?.trim()?.ifEmpty { null }
         subject = Vision.subject(b).getOrNull()
     }
-    // A light tick each time a swipe lands on the next or previous photo.
+    // A tick (same strength as a long-press menu in Files) each time a swipe lands on the next or previous photo.
     var lastPage by remember { mutableIntStateOf(pager.currentPage) }
     LaunchedEffect(pager.currentPage) {
         if (pager.currentPage != lastPage) {
             lastPage = pager.currentPage
+            Haptics.tick(ctx)
         }
     }
     SystemBarsVisible(chrome)
@@ -346,7 +347,7 @@ private fun Filmstrip(items: List<Media>, pager: PagerState) {
             if (isDragged) scrubbing = true
             if (scrubbing && idx >= 0 && idx != lastTick) {
                 // A very light tick for each photo passed while scrubbing, like iOS.
-                if (lastTick >= 0) Unit
+                if (lastTick >= 0) Haptics.tick(view.context)
                 lastTick = idx
             }
             if (!scrubbing) lastTick = idx
