@@ -104,6 +104,17 @@ h2{font-size:clamp(32px,5vw,48px);font-weight:700;letter-spacing:-.025em;text-al
 .card ul{margin-top:10px;padding-left:18px;color:var(--secondary);font-size:15px}
 .card li{margin:3px 0}
 
+
+/* author */
+.author{display:flex;align-items:center;gap:22px;background:var(--bg2);border-radius:28px;padding:30px;max-width:720px;margin:36px auto 0}
+.author img{width:92px;height:92px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 0 3px var(--bg),0 0 0 5px #ff5e7e}
+.author h3{font-size:24px;letter-spacing:-.01em}
+.author .role{color:var(--secondary);font-size:15px;margin-top:2px}
+.author p{color:var(--secondary);font-size:15px;margin-top:10px}
+.author .links2{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.author .links2 a{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 16px;border-radius:999px;background:var(--card);color:var(--label);font-size:14px;font-weight:600;border:.5px solid var(--glass-border)}
+@media (max-width:640px){.author{flex-direction:column;text-align:center}.author .links2{justify-content:center}}
+
 /* privacy */
 .privacy{background:var(--bg2);border-radius:28px;padding:48px 28px;text-align:center}
 .pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:26px}
@@ -134,6 +145,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
     <div class="links">
       <a href="#features">Features</a>
       <a class="hide-sm" href="#privacy">Privacy</a>
+      <a class="hide-sm" href="#author">Author</a>
       <a href="#install">Install</a>
       <a href="https://github.com/shatheitguy/photos-android">GitHub</a>
     </div>
@@ -143,7 +155,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
 <header class="hero wrap">
   <img class="icon" src="icon.svg" alt="Photos app icon">
   <h1>Photos.<br>Now on Android.</h1>
-  <p>Your whole library in one beautiful grid, memories that play themselves, and an editor that never touches your originals.</p>
+  <p>Your whole library in one beautiful grid, memories that play themselves, Live Text, subject lifting, and an editor that never touches your originals.</p>
   <div class="cta">
     <a class="btn primary" href="https://github.com/shatheitguy/photos-android/releases/latest">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14"/></svg>
@@ -151,7 +163,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
     </a>
     <a class="btn glass" href="https://github.com/shatheitguy/photos-android">View source</a>
   </div>
-  <div class="meta">Free · Android 10 or newer · About 2 MB</div>
+  <div class="meta">Free · Android 10 or newer · About 4 MB · Phones and tablets</div>
 </header>
 
 <div class="phones" aria-hidden="true">
@@ -175,7 +187,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
     <div class="v-top">
       <div class="gc"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4.5 7.5 12l7.5 7.5"/></svg></div>
       <div class="t">Today<span>6:26 PM</span></div>
-      <div class="gp">Edit</div>
+      <div class="gc"><svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></div>
     </div>
     <div class="viewer-photo" style="background:linear-gradient(160deg,#ffb443 0%,#ff5e7e 45%,#8a5cff 100%)"></div>
     <div class="strip" data-strip></div>
@@ -227,15 +239,27 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
     </div>
     <div class="card">
       <div class="ic" style="background:#ffb44322"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffb443" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h3M11 7h9M4 17h9M17 17h3"/><circle cx="9" cy="7" r="2.2"/><circle cx="15" cy="17" r="2.2"/></svg></div>
-      <h3>Edit without worry</h3>
-      <p>Edits are saved as a copy. Your original is never changed.</p>
-      <ul><li>Brightness, contrast, saturation, warmth</li><li>10 filters — Vivid, Dramatic, Mono, Noir…</li><li>Rotate, press and hold to compare</li></ul>
+      <h3>A real photo editor</h3>
+      <p>Every iPhone adjustment, on the same ruler dial. Edits are saved as a copy.</p>
+      <ul><li>Auto, Exposure, Brilliance, Highlights, Shadows, Contrast, Black Point, Vibrance, Warmth, Tint, Sharpness, Definition, Noise Reduction, Vignette…</li><li>10 filters: Vivid, Dramatic, Mono, Noir…</li><li>Crop with ratios, rotate and flip</li></ul>
     </div>
     <div class="card">
       <div class="ic" style="background:#8a5cff22"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8a5cff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12Q12 3 21.5 12 12 21 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
       <h3>A viewer that feels right</h3>
       <p>Swipe, zoom, scrub — every gesture you expect.</p>
-      <ul><li>Scrub the thumbnail strip to fly through photos</li><li>Pinch and double-tap to zoom</li><li>Swipe down to close, up for details</li><li>Videos and GIFs play inline</li></ul>
+      <ul><li>Scrub the thumbnail strip to fly through photos</li><li>Pinch and double-tap to zoom</li><li>••• menu: Copy, Duplicate, Hide, Move to Album</li><li>Videos and GIFs play inline</li></ul>
+    </div>
+    <div class="card">
+      <div class="ic" style="background:#ffd60a22"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffd60a" stroke-width="1.8" stroke-linecap="round"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3M7.5 9h9M7.5 12h9M7.5 15H13"/></svg></div>
+      <h3>Live Text &amp; Lift Subject</h3>
+      <p>The clever bits, right on your phone. Nothing is uploaded.</p>
+      <ul><li>Select, copy or share text found in any photo</li><li>Long-press a person, pet or object to lift it out</li><li>Copy, Share or Add Sticker</li></ul>
+    </div>
+    <div class="card">
+      <div class="ic" style="background:#ff453a22"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff453a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="16" rx="3"/><path d="M9 4v16"/></svg></div>
+      <h3>Made for tablets too</h3>
+      <p>An iPad-style sidebar beside your photos on big screens.</p>
+      <ul><li>Library, Albums, Search, Media Types, Utilities</li><li>iOS delete cards, no extra Android prompts</li></ul>
     </div>
     <div class="card">
       <div class="ic" style="background:#30d15822"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#30d158" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="8.5" width="18" height="12.5" rx="2.5"/><path d="M5.5 5.5h13M8 2.8h8"/></svg></div>
@@ -270,7 +294,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
       <span class="pill">Photos never leave your phone</span>
       <span class="pill">No ads</span>
       <span class="pill">No analytics</span>
-      <span class="pill">Deletes go to the system trash</span>
+      <span class="pill">Deletes ask first, like iPhone</span>
+      <span class="pill">Live Text runs on-device</span>
       <span class="pill">Locked Hidden album</span>
     </div>
   </div>
@@ -287,9 +312,26 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
   </div>
 </section>
 
+<section id="author" class="wrap">
+  <div class="eyebrow">Made by</div>
+  <h2>Hi, I'm Sharqan.</h2>
+  <div class="author">
+    <img src="https://github.com/shatheitguy.png" alt="Sharqan Ahamed">
+    <div>
+      <h3>Sharqan Ahamed</h3>
+      <div class="role">Designer &amp; developer of Photos and Files</div>
+      <p>I build Android apps that feel as calm and polished as the ones on iPhone, with no ads, no tracking, and everything staying on your phone.</p>
+      <div class="links2">
+        <a href="https://github.com/shatheitguy"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>@shatheitguy</a>
+        <a href="https://shatheitguy.github.io/files-android/">See Files</a>
+      </div>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
-    <span>Photos for Android · Built with Kotlin and Jetpack Compose</span>
+    <span>Photos for Android · Made by <a href="https://github.com/shatheitguy" style="color:var(--label)">Sharqan Ahamed</a> · Built with Kotlin and Jetpack Compose</span>
     <span>Independent project, not affiliated with Apple or Google.</span>
   </div>
 </footer>
