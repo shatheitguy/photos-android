@@ -245,6 +245,7 @@ fun MediaGrid(
     val gridCtx = androidx.compose.ui.platform.LocalContext.current
     // Long-press (without dragging) opens the iPhone photo menu.
     var menuFor by remember { mutableStateOf<Media?>(null) }
+    var menuAt by remember { mutableLongStateOf(0L) }
     var addTo by remember { mutableStateOf<Media?>(null) }
 
     fun indexAt(x: Float, y: Float): Int {
@@ -292,12 +293,14 @@ fun MediaGrid(
             if (!swiped && !selection.active && !trash) {
                 // Held still: show the photo menu. If the finger then moves, switch to drag-select instead.
                 menuFor = items[start]
-                Haptics.detent(gridCtx)
+                menuAt = android.os.SystemClock.uptimeMillis()
+                Haptics.press(gridCtx)
                 var moved = false
                 while (true) {
-                    val ev = awaitPointerEvent()
+                    // Initial pass: the photo underneath must not see the finger lift as a tap.
+                    val ev = awaitPointerEvent(PointerEventPass.Initial)
                     val ch = ev.changes.firstOrNull { it.id == down.id } ?: break
-                    if (!ch.pressed) break
+                    if (!ch.pressed) { ch.consume(); break }
                     if ((ch.position - down.position).getDistance() > slop * 2) {
                         moved = true
                         pos = ch.position
@@ -372,8 +375,15 @@ fun MediaGrid(
                 selecting = selection.active,
                 selected = m.id in selection.ids,
                 trashDays = if (trash) ((m.dateExpires * 1000 - now) / 86_400_000L).coerceAtLeast(0).toInt() else null,
-                onClick = { if (selection.active) selection.toggle(m.id) else onOpen(m) },
-                onLongClick = null,
+                onClick = {
+                    when {
+                        selection.active -> selection.toggle(m.id)
+                        // Ignore the lift right after a long-press opened the menu.
+                        menuFor != null || android.os.SystemClock.uptimeMillis() - menuAt < 700 -> Unit
+                        else -> onOpen(m)
+                    }
+                },
+                onLongClick = {},
                 aspect = aspectGrid,
             )
         }
