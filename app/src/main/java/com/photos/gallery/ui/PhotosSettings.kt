@@ -87,6 +87,7 @@ fun PhotosSettingsScreen(about: Boolean, onBack: () -> Unit) {
                 }
             }
         }
+        item { FossifyImportGroup() } // TEMPORARY: remove with FossifyImport.kt
         commonSettings("Photos", prefs)
     }
 }
