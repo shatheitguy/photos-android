@@ -34,6 +34,23 @@ object Haptics {
         effect(ctx, VibrationEffect.EFFECT_TICK)
     }
 
+    /**
+     * Sliding the filmstrip under a photo: a tick a little softer than [tick], one per photo passed.
+     * Uses the motor's tick at half strength where the phone supports it.
+     */
+    fun scrub(ctx: Context) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastTick < 45) return
+        lastTick = now
+        val v = vibrator(ctx) ?: return
+        if (!v.hasVibrator()) return
+        val soft = Build.VERSION.SDK_INT >= 30 && v.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_TICK)
+        runCatching {
+            if (soft) v.vibrate(VibrationEffect.startComposition().addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, 0.5f).compose())
+            else v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+        }
+    }
+
     /** Zero or the end of the dial: the same tick. */
     fun detent(ctx: Context) = effect(ctx, VibrationEffect.EFFECT_TICK)
 

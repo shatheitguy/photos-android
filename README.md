@@ -16,7 +16,7 @@ One beautiful library, memories that play themselves, Live Text, subject lifting
 ![No ads](https://img.shields.io/badge/ads-none-lightgrey)
 ![No tracking](https://img.shields.io/badge/tracking-none-lightgrey)
 
-[Features](#-features) · [What's new](#-whats-new-in-16) · [Install](#-install) · [Build](#%EF%B8%8F-build-from-source) · [Author](#-author)
+[Features](#-features) · [What's new](#-whats-new-in-10) · [Install](#-install) · [Build](#%EF%B8%8F-build-from-source) · [Author](#-author)
 
 </div>
 
@@ -66,7 +66,7 @@ Press and hold to compare with the original. Edits are saved as a **copy** in `P
 - **Check for Updates** downloads and installs new versions right inside the app.
 - Works hand in hand with **[Files for Android](https://github.com/shatheitguy/files-android)**.
 
-## 🆕 What's new in 1.6
+## 🆕 What's new in 1.0
 - **Crop** with handles, ratios, rotate and flip.
 - All **16 iPhone adjustments** on a ruler dial.
 - **Live Text** and **Lift the subject**.
