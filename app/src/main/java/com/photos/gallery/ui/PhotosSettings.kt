@@ -39,11 +39,12 @@ fun AlbumsMoreButton() {
         ) {
             Icon(IosIcons.More, null, tint = c.label, modifier = Modifier.size(22.dp))
         }
+        val updates = LocalUpdates.current
         IosDropdown(
             open, { open = false },
             listOf(
                 Triple("Settings", IosIcons.Sliders) { nav.push(Route.Settings()) },
-                Triple("Check for Updates", IosIcons.Download) { nav.push(Route.Settings()) },
+                Triple("Check for Updates", IosIcons.Download) { updates.checkNow("Photos") },
             ),
         )
     }

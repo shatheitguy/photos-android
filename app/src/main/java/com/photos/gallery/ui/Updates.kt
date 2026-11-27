@@ -323,6 +323,28 @@ class UpdateCenter(private val ctx: Context, private val scope: CoroutineScope) 
         }
     }
 
+    /** From the ••• menu: check right away, then show the update card or say it's up to date. */
+    fun checkNow(appName: String) {
+        if (checking) return
+        fun say(msg: String) = android.widget.Toast.makeText(ctx, msg, android.widget.Toast.LENGTH_SHORT).show()
+        say("Checking for updates…")
+        checking = true
+        error = null
+        scope.launch {
+            val r = runCatching { Updater.latest(selfPkg) }
+            checking = false
+            r.onSuccess { rel ->
+                releases[selfPkg] = rel
+                AppPrefs.get(ctx).lastUpdateCheck = System.currentTimeMillis()
+                if (hasUpdate(selfPkg)) prompt = rel
+                else say("$appName ${installed(selfPkg).orEmpty()} is up to date".replace("  ", " "))
+            }.onFailure {
+                error = it.message
+                say(it.message ?: "Couldn't check for updates.")
+            }
+        }
+    }
+
     fun hasUpdate(pkg: String): Boolean {
         val r = releases[pkg] ?: return false
         val v = installed(pkg) ?: return false
