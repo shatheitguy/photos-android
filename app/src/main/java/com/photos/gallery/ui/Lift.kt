@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.ContentScale
@@ -98,6 +99,39 @@ object Vision {
         }
     }
 
+    /**
+     * A thin white outline of the subject (from the cut-out's edges), at a smaller size.
+     * Same shape as the photo, so it lines up when both are drawn fitted.
+     */
+    suspend fun outline(fg: Bitmap): Bitmap = withContext(Dispatchers.Default) {
+        val k = minOf(1f, 640f / maxOf(fg.width, fg.height))
+        val w = (fg.width * k).toInt().coerceAtLeast(1)
+        val h = (fg.height * k).toInt().coerceAtLeast(1)
+        val small = Bitmap.createScaledBitmap(fg, w, h, true)
+        val px = IntArray(w * h)
+        small.getPixels(px, 0, w, 0, 0, w, h)
+        val inside = BooleanArray(w * h) { (px[it] ushr 24) > 110 }
+        val edge = BooleanArray(w * h)
+        for (y in 0 until h) for (x in 0 until w) {
+            val i = y * w + x
+            if (!inside[i]) continue
+            if (x < 2 || y < 2 || x >= w - 2 || y >= h - 2 ||
+                !inside[i - 2] || !inside[i + 2] || !inside[i - 2 * w] || !inside[i + 2 * w]
+            ) edge[i] = true
+        }
+        val out = IntArray(w * h)
+        for (y in 0 until h) for (x in 0 until w) {
+            // Thicken the line by a pixel so it reads as a stroke.
+            var on = false
+            for (dy in -1..1) for (dx in -1..1) {
+                val xx = x + dx; val yy = y + dy
+                if (xx in 0 until w && yy in 0 until h && edge[yy * w + xx]) on = true
+            }
+            if (on) out[y * w + x] = -0x1 // opaque white
+        }
+        Bitmap.createBitmap(out, w, h, Bitmap.Config.ARGB_8888)
+    }
+
     private fun opaqueBounds(b: Bitmap): android.graphics.Rect? {
         val w = b.width
         val h = b.height
@@ -119,13 +153,18 @@ object Vision {
     }
 }
 
-/** Lifted subject: dims the photo, shows the subject glowing, with Copy, Share and Save as Sticker. */
+/**
+ * Lifted subject, the iPhone way: the photo dims a little, the subject rises with a soft shadow,
+ * and a light runs around its outline. Copy · Share · Add Sticker sit above it.
+ * [ready] is the subject if it was already found in the background (then this is instant).
+ */
 @Composable
-fun LiftOverlay(source: Bitmap, onClose: () -> Unit) {
+fun LiftOverlay(source: Bitmap, ready: Pair<Bitmap, android.graphics.Rect>?, onClose: () -> Unit) {
     val ctx = LocalContext.current
     val c = LocalIos.current
-    var lifted by remember(source) { mutableStateOf<Pair<Bitmap, android.graphics.Rect>?>(null) }
+    var lifted by remember(source) { mutableStateOf(ready) }
     LaunchedEffect(source) {
+        if (lifted != null) return@LaunchedEffect
         Vision.subject(source)
             .onSuccess { lifted = it }
             .onFailure {
@@ -140,46 +179,69 @@ fun LiftOverlay(source: Bitmap, onClose: () -> Unit) {
             }
     }
     BackHandler(onBack = onClose)
-    val shine = rememberInfiniteTransition(label = "shine")
-    val sweep by shine.animateFloat(-0.4f, 1.4f, infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart), label = "sweep")
-    val glow by shine.animateFloat(0.55f, 1f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "glow")
+    val l = lifted
+    val edge by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, l) {
+        value = l?.let { Vision.outline(it.first).asImageBitmap() }
+    }
+    val dim by animateFloatAsState(if (l != null) 0.28f else 0.12f, tween(260), label = "dim")
+    val lift = remember(l) { Animatable(1f) }
+    LaunchedEffect(l) { if (l != null) lift.animateTo(1.045f, spring(dampingRatio = 0.55f, stiffness = 320f)) }
+    val light = rememberInfiniteTransition(label = "light")
+    val angle by light.animateFloat(0f, 360f, infiniteRepeatable(tween(1500, easing = LinearEasing)), label = "angle")
+    val shimmer by light.animateFloat(0.25f, 0.55f, infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "shimmer")
 
-    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)).tap(onClick = onClose)) {
-        val l = lifted
-        if (l == null) {
-            CircularProgressIndicator(Modifier.align(Alignment.Center), color = Color.White.copy(alpha = 0.7f))
-        } else {
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = dim)).tap(onClick = onClose)) {
+        if (l != null) {
             val img = remember(l) { l.first.asImageBitmap() }
-            val pop = remember(l) { Animatable(0.94f) }
-            LaunchedEffect(l) { pop.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 380f)) }
-            // Glow: a white silhouette behind the subject.
-            Image(
-                img, null,
-                Modifier.fillMaxSize().graphicsLayer { scaleX = pop.value * 1.006f; scaleY = pop.value * 1.006f; alpha = glow }
-                    .blur(5.dp),
-                contentScale = ContentScale.Fit,
-                colorFilter = ColorFilter.tint(Color.White),
-            )
-            // The subject with a shine sweeping across it.
-            Image(
-                img, null,
-                Modifier.fillMaxSize()
-                    .graphicsLayer { scaleX = pop.value; scaleY = pop.value; compositingStrategy = CompositingStrategy.Offscreen }
-                    .drawWithContent {
-                        drawContent()
-                        val x = size.width * sweep
-                        drawRect(
-                            Brush.linearGradient(
-                                0f to Color.Transparent, 0.5f to Color.White.copy(alpha = 0.55f), 1f to Color.Transparent,
-                                start = androidx.compose.ui.geometry.Offset(x - 160f, 0f),
-                                end = androidx.compose.ui.geometry.Offset(x + 160f, size.height * 0.25f),
-                            ),
-                            blendMode = BlendMode.SrcAtop,
-                        )
-                    },
-                contentScale = ContentScale.Fit,
-            )
-            LiftCallout(l, pop.value, c.dark) { action ->
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val w = constraints.maxWidth.toFloat()
+                val h = constraints.maxHeight.toFloat()
+                val sc = minOf(w / l.first.width, h / l.first.height)
+                val ox = (w - l.first.width * sc) / 2f
+                val oy = (h - l.first.height * sc) / 2f
+                val cx = ox + l.second.exactCenterX() * sc
+                val cy = oy + l.second.exactCenterY() * sc
+                val origin = TransformOrigin(cx / w, cy / h)
+                val lifting = Modifier.fillMaxSize().graphicsLayer {
+                    scaleX = lift.value; scaleY = lift.value; transformOrigin = origin
+                }
+                // Soft shadow under the raised subject.
+                Image(
+                    img, null,
+                    lifting.graphicsLayer { translationY = 10.dp.toPx() * (lift.value - 1f) / 0.045f; alpha = 0.45f }.blur(14.dp),
+                    contentScale = ContentScale.Fit, colorFilter = ColorFilter.tint(Color.Black),
+                )
+                // The subject itself.
+                Image(img, null, lifting, contentScale = ContentScale.Fit)
+                val e = edge
+                if (e != null) {
+                    // A soft white glow along the outline...
+                    Image(e, null, lifting.graphicsLayer { alpha = shimmer }.blur(3.dp), contentScale = ContentScale.Fit)
+                    // ...and a bright light that runs around it.
+                    Image(
+                        e, null,
+                        lifting.graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                            .drawWithContent {
+                                drawContent()
+                                val pivot = androidx.compose.ui.geometry.Offset(cx, cy)
+                                rotate(angle, pivot) {
+                                    drawRect(
+                                        Brush.sweepGradient(
+                                            0f to Color.Transparent, 0.62f to Color.Transparent,
+                                            0.86f to Color.White, 1f to Color.Transparent,
+                                            center = pivot,
+                                        ),
+                                        topLeft = androidx.compose.ui.geometry.Offset(-size.width, -size.height),
+                                        size = androidx.compose.ui.geometry.Size(size.width * 3, size.height * 3),
+                                        blendMode = BlendMode.DstIn,
+                                    )
+                                }
+                            },
+                        contentScale = ContentScale.Fit,
+                    )
+                }
+            }
+            LiftCallout(l, lift.value, c.dark) { action ->
                 when (action) {
                     0 -> copySubject(ctx, l)
                     1 -> shareSubject(ctx, l)

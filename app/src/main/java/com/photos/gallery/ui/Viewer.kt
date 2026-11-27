@@ -131,10 +131,12 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
     var liveMode by remember { mutableStateOf(false) }
     var albumMove by remember { mutableStateOf<Boolean?>(null) }
     var lifting by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var subject by remember { mutableStateOf<Pair<android.graphics.Bitmap, android.graphics.Rect>?>(null) }
     LaunchedEffect(current.id) {
         still = null
         liveText = null
         liveWords = emptyList()
+        subject = null
         liveMode = false
         if (current.isVideo || current.isAnimated || trash) return@LaunchedEffect
         kotlinx.coroutines.delay(350) // wait until swiping settles
@@ -143,6 +145,7 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
         val read = Vision.read(b)
         liveWords = read?.words().orEmpty()
         liveText = read?.text?.trim()?.ifEmpty { null }
+        subject = Vision.subject(b).getOrNull()
     }
     // A light tick each time a swipe lands on the next or previous photo.
     var lastPage by remember { mutableIntStateOf(pager.currentPage) }
@@ -232,7 +235,7 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
             }
         }
     }
-    lifting?.let { b -> LiftOverlay(b) { lifting = null } }
+    lifting?.let { b -> LiftOverlay(b, subject) { lifting = null } }
     albumMove?.let { move ->
         ModalBottomSheet(onDismissRequest = { albumMove = null }, containerColor = c.grouped) {
             AlbumPicker(move, listOf(current)) { albumMove = null }
