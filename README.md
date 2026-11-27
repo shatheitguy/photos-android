@@ -4,8 +4,8 @@
 
 # Photos for Android
 
-**The iPhone Photos experience, rebuilt natively for Android.**<br>
-One beautiful library, memories that play themselves, Live Text, subject lifting and a full photo editor that never touches your originals.
+**Photos. Now on Android.**<br>
+Your whole library in one beautiful grid, memories that play themselves, Live Text, subject lifting, and an editor that never touches your originals.
 
 [![Latest release](https://img.shields.io/github/v/release/shatheitguy/photos-android?style=for-the-badge&label=Download&color=ff5e7e)](https://github.com/shatheitguy/photos-android/releases/latest)
 [![Website](https://img.shields.io/badge/Website-visit-8a5cff?style=for-the-badge)](https://shatheitguy.github.io/photos-android/)
@@ -16,7 +16,7 @@ One beautiful library, memories that play themselves, Live Text, subject lifting
 ![No ads](https://img.shields.io/badge/ads-none-lightgrey)
 ![No tracking](https://img.shields.io/badge/tracking-none-lightgrey)
 
-[Features](#-features) · [What's new](#-whats-new-in-10) · [Install](#-install) · [Build](#%EF%B8%8F-build-from-source) · [Author](#-author)
+[Features](#-features) · [Install](#-install) · [Build](#%EF%B8%8F-build-from-source) · [Author](#-author)
 
 </div>
 
@@ -24,61 +24,88 @@ One beautiful library, memories that play themselves, Live Text, subject lifting
 
 ## ✨ Features
 
-### 🖼️ Library
-- One continuous grid of every photo and video, newest at the bottom, just like iPhone.
-- **Years · Months · Days · All Photos**, plus filters for Favorites, Photos, Videos and Screenshots.
-- Pinch to change the grid size, or switch on the **Aspect Ratio Grid** to see whole photos.
-- Long-press and drag to select many at once. The grid scrolls itself when you reach the edge.
-- Remembers your view, filter and grid size.
+**Everything you love about Photos.** Designed to feel instantly familiar, built natively for Android.
 
-### 🔍 Photo viewer
-- Swipe, pinch, double-tap to zoom, swipe down to close, swipe up for details.
-- **Scrub the thumbnail strip** and the photo follows your finger.
-- Floating glass buttons: Share · Favorite · Info · Edit · Delete.
-- **•••** menu: Copy, Duplicate, Hide, Copy to Album, Move to Album, Use As.
-- **Live Text:** tap the text button to select, copy or share any text in a photo.
-- **Lift the subject:** long-press a person, pet or object, then Copy, Share or **Add Sticker**.
-- Plays videos and animated GIFs.
+### 🖼️ One library, beautifully organised
+_Every photo and video in a single grid, newest at the bottom._
 
-### 🎨 Editing
-| Adjust | Filters | Crop |
-|---|---|---|
-| Auto, Exposure, Brilliance, Highlights, Shadows, Contrast, Brightness, Black Point, Saturation, Vibrance, Warmth, Tint, Sharpness, Definition, Noise Reduction, Vignette, all on the iPhone-style ruler dial | Vivid, Vivid Warm, Vivid Cool, Dramatic, Dramatic Warm, Dramatic Cool, Mono, Silvertone, Noir | Drag corners and edges, Freeform · Original · Square · 16:9 · 4:3 · 3:2 · 9:16 · 3:4, Rotate and Flip |
+- Years, Months, Days and All Photos
+- Filter Favorites, Photos, Videos, Screenshots
+- Pinch to change grid size
+- Long-press any photo for the iPhone preview menu
+- Drag to select many — auto-scrolls
 
-Press and hold to compare with the original. Edits are saved as a **copy** in `Pictures/Photos Edits`.
+### 🎞️ Memories
+_Your best moments turned into slideshows, automatically._
 
-### 📚 Albums
-- **Memories** that play as slideshows: On This Day, weekends, Best of the month, Year in Review.
-- Featured Photos, your folders (Camera, WhatsApp, Screenshots…) and Favorites.
-- Media types: Videos, Selfies, Screenshots, Screen Recordings, Panoramas, Animated.
-- Utilities: Duplicates, **Hidden** and **Recently Deleted**, locked with your PIN or fingerprint.
+- On This Day
+- Weekends and busy days
+- Best of the month, Year in Review
+- Featured Photos every day
 
-### 🗑️ Deleting, the iPhone way
-- An iOS glass card asks before anything is deleted, then items wait in Recently Deleted for 30 days.
-- Turn on **Delete Without Asking** in Settings to skip Android's extra "Allow" prompt.
+### 🎨 A real photo editor
+_Every iPhone adjustment, on the same ruler dial. Edits are saved as a copy._
 
-### 📱 Tablets
-- An **iPad-style layout** with a sidebar (Library, Albums, Search, My Albums, Media Types, Utilities) beside your photos.
+- Auto, Exposure, Brilliance, Highlights, Shadows, Contrast, Black Point, Vibrance, Warmth, Tint, Sharpness, Definition, Noise Reduction, Vignette…
+- 10 filters: Vivid, Dramatic, Mono, Noir…
+- Crop with ratios, rotate and flip
 
-### ⚙️ And more
-- Light, dark or automatic appearance.
-- Shows up in **Open with** when you open a picture from another app.
-- **Check for Updates** downloads and installs new versions right inside the app.
-- Works hand in hand with **[Files for Android](https://github.com/shatheitguy/files-android)**.
+### 👆 A viewer that feels right
+_Swipe, zoom, scrub — every gesture you expect._
 
-## 🆕 What's new in 1.0
-- **Crop** with handles, ratios, rotate and flip.
-- All **16 iPhone adjustments** on a ruler dial.
-- **Live Text** and **Lift the subject**.
-- A **•••** menu in the viewer.
-- Fixed swiping between photos sometimes stopping after flicking the thumbnail strip.
+- Scrub the thumbnail strip to fly through photos, with a soft tick for each one
+- Pinch and double-tap to zoom
+- ••• menu: Copy, Duplicate, Hide, Move to Album
+- Videos and GIFs play inline
+
+### ✨ Live Text & Lift Subject
+_The clever bits, right on your phone. Nothing is uploaded._
+
+- Select, copy or share text found in any photo
+- Long-press a person, pet or object to lift it out
+- Copy, Share or Add Sticker
+
+### 📱 Made for tablets too
+_An iPad-style sidebar beside your photos on big screens._
+
+- Library, Albums, Search, Media Types, Utilities
+- iOS delete cards, no extra Android prompts
+
+### 📚 Albums and utilities
+_Folders, favorites and smart media types in one place._
+
+- Videos, Selfies, Screenshots, Panoramas
+- Duplicates finder
+- Hidden and Recently Deleted, locked with your PIN
+
+### 🔍 Search
+_Find anything by month, year, weekday, album or type._
+
+- Try “November”, “2025”, “videos”
+- Moments grouped by month
+
+## 🤝 Files, made to work with Photos.
+
+An iPhone-style file manager: open a picture and it opens right here in Photos, plus “Save to Files” in every share sheet.
+
+👉 [Get Files for Android](https://github.com/shatheitguy/files-android)
+
+## 🔒 Your photos stay on your phone.
+
+No accounts, no cloud, no tracking — ever. The only thing the apps fetch from the internet is new versions from GitHub.
+
+✅ Photos never leave your phone · ✅ No ads · ✅ No analytics · ✅ Deletes ask first, like iPhone · ✅ Live Text runs on-device · ✅ Locked Hidden album
 
 ## 📥 Install
-1. Download **`Photos.apk`** from the [latest release](https://github.com/shatheitguy/photos-android/releases/latest).
-2. Open it on your phone and allow installing from this source if Android asks.
-3. Open **Photos** and tap **Continue** to give it access to your photos and videos.
 
-> Requires **Android 10 or newer**. Live Text and lifting subjects use Google Play services on your phone. Nothing is uploaded.
+**Up and running in a minute.**
+
+1. **Download**: Get `Photos.apk` from the [latest release](https://github.com/shatheitguy/photos-android/releases/latest).
+2. **Install**: Open the file on your phone. If Android asks, allow installing from this source.
+3. **Allow access**: Open Photos and tap **Continue** so it can show your photos and videos.
+4. **Make it default**: Open any photo from another app, choose **Photos** and tap **Always**.
+
+> Requires **Android 10 or newer**.
 
 ## 🛠️ Build from source
 You need JDK 17 and the Android SDK (platform 35).
@@ -120,17 +147,16 @@ app/src/main/java/com/photos/gallery/
 ```
 </details>
 
-## 🔒 Privacy
-No accounts, no cloud, no ads, no analytics. Your photos never leave your phone. The only network use is checking GitHub for new versions.
-
 ## 👤 Author
+
+**Hi, I'm Sharqan.** I build Android apps that feel as calm and polished as the ones on iPhone, with no ads, no tracking, and everything staying on your phone.
 
 <table>
   <tr>
     <td><img src="https://github.com/shatheitguy.png" width="72" height="72" alt="Sharqan Ahamed"></td>
     <td>
       <b>Sharqan Ahamed</b><br>
-      Designer and developer of Photos and Files for Android<br>
+      Designer and developer of Files and Photos for Android<br>
       <a href="https://github.com/shatheitguy">github.com/shatheitguy</a>
     </td>
   </tr>
