@@ -23,44 +23,26 @@ object Haptics {
 
     private var lastTick = 0L
 
-    /** The lightest tick: scrubbing photos, turning the editor dial. At most one every 45 ms, so it never buzzes. */
+    /**
+     * The same tick Files uses when a menu opens (Android's built-in "tick" effect): scrubbing, swiping
+     * photos, the editor dial, menus. At most one every 45 ms, so it never buzzes.
+     */
     fun tick(ctx: Context) {
         val now = android.os.SystemClock.uptimeMillis()
         if (now - lastTick < 45) return
         lastTick = now
-        play(ctx, 0.7f, 5, 50)
+        effect(ctx, VibrationEffect.EFFECT_TICK)
     }
 
-    /** Long-pressing a photo: light, but clearly felt. */
-    fun press(ctx: Context) {
+    /** Zero or the end of the dial: the same tick. */
+    fun detent(ctx: Context) = effect(ctx, VibrationEffect.EFFECT_TICK)
+
+    /** Long-pressing a photo: Android's built-in "click". */
+    fun press(ctx: Context) = effect(ctx, VibrationEffect.EFFECT_CLICK)
+
+    private fun effect(ctx: Context, id: Int) {
         val v = vibrator(ctx) ?: return
         if (!v.hasVibrator()) return
-        runCatching {
-            if (Build.VERSION.SDK_INT >= 30 && v.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_CLICK)) {
-                v.vibrate(VibrationEffect.startComposition().addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, 0.45f).compose())
-            } else if (v.hasAmplitudeControl()) {
-                v.vibrate(VibrationEffect.createOneShot(10, 70))
-            } else {
-                v.vibrate(VibrationEffect.createOneShot(8, VibrationEffect.DEFAULT_AMPLITUDE))
-            }
-        }
-    }
-
-    /** A little firmer: reaching zero or the end of the dial, or opening a menu. */
-    fun detent(ctx: Context) = play(ctx, 0.85f, 7, 80)
-
-    private fun play(ctx: Context, scale: Float, ms: Long, amplitude: Int) {
-        val v = vibrator(ctx) ?: return
-        if (!v.hasVibrator()) return
-        runCatching {
-            if (Build.VERSION.SDK_INT >= 30 && v.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_LOW_TICK)) {
-                v.vibrate(VibrationEffect.startComposition().addPrimitive(VibrationEffect.Composition.PRIMITIVE_LOW_TICK, scale).compose())
-            } else if (v.hasAmplitudeControl()) {
-                v.vibrate(VibrationEffect.createOneShot(ms, amplitude))
-            } else {
-                // No strength control: keep the pulse extremely short so it still feels light.
-                v.vibrate(VibrationEffect.createOneShot(if (scale < 0.8f) 4 else 6, VibrationEffect.DEFAULT_AMPLITUDE))
-            }
-        }
+        runCatching { v.vibrate(VibrationEffect.createPredefined(id)) }
     }
 }

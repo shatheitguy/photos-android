@@ -81,8 +81,11 @@ object Vision {
         }
     }
 
-    suspend fun text(bmp: Bitmap): String? = runCatching {
-        texts.process(InputImage.fromBitmap(bmp, 0)).awaitResult().text.trim().ifEmpty { null }
+    suspend fun text(bmp: Bitmap): String? = read(bmp)?.text?.trim()?.ifEmpty { null }
+
+    /** The full result, with where every word sits in the picture. */
+    suspend fun read(bmp: Bitmap): com.google.mlkit.vision.text.Text? = runCatching {
+        texts.process(InputImage.fromBitmap(bmp, 0)).awaitResult()
     }.getOrNull()
 
     /** The subject on a transparent background, trimmed to its edges; null when nothing stands out. */

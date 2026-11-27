@@ -127,16 +127,22 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
     var still by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var liveText by remember { mutableStateOf<String?>(null) }
     var showText by remember { mutableStateOf(false) }
+    var liveWords by remember { mutableStateOf<List<LiveWord>>(emptyList()) }
+    var liveMode by remember { mutableStateOf(false) }
     var albumMove by remember { mutableStateOf<Boolean?>(null) }
     var lifting by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     LaunchedEffect(current.id) {
         still = null
         liveText = null
+        liveWords = emptyList()
+        liveMode = false
         if (current.isVideo || current.isAnimated || trash) return@LaunchedEffect
         kotlinx.coroutines.delay(350) // wait until swiping settles
         val b = ImageLoader.full(ctx, current.uri, 2048, software = true) ?: return@LaunchedEffect
         still = b
-        liveText = Vision.text(b)
+        val read = Vision.read(b)
+        liveWords = read?.words().orEmpty()
+        liveText = read?.text?.trim()?.ifEmpty { null }
     }
     // A light tick each time a swipe lands on the next or previous photo.
     var lastPage by remember { mutableIntStateOf(pager.currentPage) }
@@ -168,6 +174,7 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
                     onDrag = { dragY = it },
                     onDismiss = onClose,
                     onSwipeUp = { if (!trash) showInfo = true },
+                    fitted = liveMode && page == pager.currentPage,
                     onLongPress = {
                         val b = still
                         if (page == pager.currentPage && b != null) {
@@ -178,6 +185,11 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
                 )
             }
         }
+        val b = still
+        if (liveMode && b != null && liveWords.isNotEmpty()) {
+            androidx.activity.compose.BackHandler { liveMode = false }
+            LiveTextOverlay(b.width, b.height, liveWords) { liveMode = false }
+        }
         val showChrome = chrome && fade < 0.05f
         AnimatedVisibility(showChrome, enter = fadeIn(), exit = fadeOut(), modifier = Modifier.align(Alignment.TopCenter)) {
             ViewerTopBar(current, trash, onBack = onClose, onAlbum = { albumMove = it })
@@ -187,7 +199,7 @@ fun ViewerScreen(ref: AlbumRef, startId: Long, onClose: () -> Unit) {
                 if (liveText != null) {
                     Row(Modifier.fillMaxWidth().padding(end = 18.dp, bottom = 10.dp)) {
                         Spacer(Modifier.weight(1f))
-                        ViewerGlassCircle(LiveTextIcon) { showText = true }
+                        LiveTextButton(liveMode) { liveMode = !liveMode }
                     }
                 }
                 if (!trash && items.size > 1) Filmstrip(items, pager)
@@ -417,6 +429,7 @@ fun MediaPage(
     onDismiss: () -> Unit,
     onSwipeUp: () -> Unit,
     onLongPress: () -> Unit = {},
+    fitted: Boolean = false,
 ) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -431,6 +444,12 @@ fun MediaPage(
         if (!m.isVideo) {
             full = ImageLoader.full(ctx, m.uri, 2560)?.asImageBitmap()
             if (m.isAnimated) anim = ImageLoader.animated(ctx, m.uri)
+        }
+    }
+    LaunchedEffect(fitted) {
+        if (fitted) {
+            scale = 1f
+            offset = Offset.Zero
         }
     }
     LaunchedEffect(active) {
