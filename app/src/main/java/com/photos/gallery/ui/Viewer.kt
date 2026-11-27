@@ -324,7 +324,7 @@ private fun Filmstrip(items: List<Media>, pager: PagerState) {
             if (isDragged) scrubbing = true
             if (scrubbing && idx >= 0 && idx != lastTick) {
                 // A very light tick for each photo passed while scrubbing, like iOS.
-                if (lastTick >= 0) view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                if (lastTick >= 0) Haptics.tick(view.context)
                 lastTick = idx
             }
             if (!scrubbing) lastTick = idx

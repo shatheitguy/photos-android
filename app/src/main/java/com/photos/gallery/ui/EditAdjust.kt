@@ -318,10 +318,10 @@ private fun Ruler(value: Float, positive: Boolean, onChange: (Float) -> Unit) {
                     val nv = (old - dx / gap * 0.02f).coerceIn(min, 1f)
                     val snapped = if (abs(nv) < 0.015f) 0f else nv
                     if ((old != 0f && snapped == 0f) || (snapped == 1f && old != 1f) || (snapped == min && old != min)) {
-                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        Haptics.detent(view.context)
                     } else if ((old * 50).roundToInt() != (snapped * 50).roundToInt()) {
                         // A very light tick for every mark the dial passes, like iOS.
-                        view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                        Haptics.tick(view.context)
                     }
                     onChange(snapped)
                 }

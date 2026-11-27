@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
     <!-- Only used to check GitHub for app updates. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Lets Photos move items to Recently Deleted without Android's extra "Allow" prompt (the user turns it on). -->
     <uses-permission android:name="android.permission.MANAGE_MEDIA" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
