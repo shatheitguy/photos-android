@@ -136,11 +136,16 @@ private fun MainScaffold(
         if (openId == null || opened || !store.loaded) return@LaunchedEffect
         val m = store.library.firstOrNull { it.id == openId }
         if (m == null) { onOpenFailed(); return@LaunchedEffect }
+        // Have the viewer's first image ready, so it never shows a blank frame.
+        com.photos.gallery.data.ImageLoader.thumbnail(ctx, m.uri, if (m.isVideo) 1080 else 512)
         opened = true
         nav.push(Route.Viewer(AlbumRef(Kind.Bucket, m.bucket, m.bucketId), m.id), instant = true)
     }
     if (openId != null && opened) {
-        LaunchedEffect(nav.stack.isEmpty()) { if (nav.stack.isEmpty()) onOpenedClosed() }
+        // Going back from a photo another app opened returns to that app at once,
+        // without waiting for the photo to fade out first.
+        val leaving = nav.stack.isEmpty() || nav.stack.first().closing
+        LaunchedEffect(leaving) { if (leaving) onOpenedClosed() }
     }
 
     CompositionLocalProvider(LocalNav provides nav, LocalActions provides actions, LocalUpdates provides updates) {

@@ -55,6 +55,12 @@ class LibraryUi(private val prefs: AppPrefs) {
     var filter: LibFilter
         get() = filterState.value
         set(v) { filterState.value = v; prefs.putInt("libFilter", v.ordinal) }
+    private val newestFirstState = mutableStateOf(prefs.int("libNewestFirst", 0) == 1)
+
+    /** Order of the library: oldest at the top (like iPhone) or newest at the top. Remembered between launches. */
+    var newestFirst: Boolean
+        get() = newestFirstState.value
+        set(v) { newestFirstState.value = v; prefs.putInt("libNewestFirst", if (v) 1 else 0); initialized.clear() }
     val allState = LazyGridState()
     val daysState = LazyGridState()
     val monthsState = LazyListState()
@@ -67,6 +73,15 @@ class LibraryUi(private val prefs: AppPrefs) {
     val initialized = mutableSetOf<LibMode>()
 
     suspend fun scrollToNewest() {
+        if (newestFirst) {
+            when (mode) {
+                LibMode.All -> allState.animateScrollToItem(0)
+                LibMode.Days -> daysState.animateScrollToItem(0)
+                LibMode.Months -> monthsState.animateScrollToItem(0)
+                LibMode.Years -> yearsState.animateScrollToItem(0)
+            }
+            return
+        }
         when (mode) {
             LibMode.All -> allState.layoutInfo.totalItemsCount.let { if (it > 0) allState.animateScrollToItem(it - 1) }
             LibMode.Days -> daysState.layoutInfo.totalItemsCount.let { if (it > 0) daysState.animateScrollToItem(it - 1) }
@@ -111,7 +126,8 @@ private fun buildDays(items: List<Media>): List<DayEntry> {
 @Composable
 fun LibraryScreen(store: PhotosStore, ui: LibraryUi, limited: Boolean, onManageAccess: () -> Unit) {
     val c = LocalIos.current
-    val items = rememberItems(ui.filter.ref)
+    val inOrder = rememberItems(ui.filter.ref)
+    val items = remember(inOrder, ui.newestFirst) { if (ui.newestFirst) inOrder.asReversed() else inOrder }
     BackHandler(ui.selection.active) { ui.selection.clear() }
     val days = remember(items) { buildDays(items) }
     val months = remember(items) { items.groupBy { it.yearMonth }.entries.map { it.key to it.value } }
@@ -184,7 +200,11 @@ private fun LibraryHeader(ui: LibraryUi, items: List<Media>) {
                     val aspect = prefs.flag(PrefKeys.AspectGrid, false)
                     IosPopupMenu(
                         menu, { menu = false },
-                        LibMode.entries.map { m -> PopupItem(m.label, checked = ui.mode == m) { ui.mode = m } } +
+                        // Tapping the view you're already in flips the order: oldest first ↔ newest first.
+                        LibMode.entries.map { m ->
+                            val on = ui.mode == m
+                            PopupItem(m.label, checked = on) { if (on) ui.newestFirst = !ui.newestFirst else ui.mode = m }
+                        } +
                             LibFilter.entries.mapIndexed { i, f ->
                                 PopupItem(f.label, group = i == 0, checked = ui.filter == f) {
                                     if (ui.filter != f) { ui.filter = f; ui.initialized.clear() }
@@ -236,10 +256,10 @@ private fun AllPhotos(ui: LibraryUi, items: List<Media>, limited: Boolean, onMan
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val headerCount = if (limited) 1 else 0
-    LaunchedEffect(items.isNotEmpty(), ui.filter) {
+    LaunchedEffect(items.isNotEmpty(), ui.filter, ui.newestFirst) {
         if (items.isNotEmpty() && LibMode.All !in ui.initialized) {
             ui.initialized += LibMode.All
-            ui.allState.scrollToItem(items.size + headerCount)
+            ui.allState.scrollToItem(if (ui.newestFirst) 0 else items.size + headerCount)
         }
     }
     val photos = remember(items) { items.count { !it.isVideo } }
@@ -278,10 +298,10 @@ private fun DaysView(ui: LibraryUi, entries: List<DayEntry>) {
     val c = LocalIos.current
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    LaunchedEffect(entries.isNotEmpty(), ui.filter) {
+    LaunchedEffect(entries.isNotEmpty(), ui.filter, ui.newestFirst) {
         if (entries.isNotEmpty() && LibMode.Days !in ui.initialized) {
             ui.initialized += LibMode.Days
-            ui.daysState.scrollToItem(entries.lastIndex)
+            ui.daysState.scrollToItem(if (ui.newestFirst) 0 else entries.lastIndex)
         }
     }
     LazyVerticalGrid(
@@ -342,10 +362,10 @@ private fun MonthsView(ui: LibraryUi, months: List<Pair<YearMonth, List<Media>>>
     val scope = rememberCoroutineScope()
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    LaunchedEffect(months.isNotEmpty(), ui.filter) {
+    LaunchedEffect(months.isNotEmpty(), ui.filter, ui.newestFirst) {
         if (months.isNotEmpty() && LibMode.Months !in ui.initialized) {
             ui.initialized += LibMode.Months
-            ui.monthsState.scrollToItem(months.lastIndex)
+            ui.monthsState.scrollToItem(if (ui.newestFirst) 0 else months.lastIndex)
         }
     }
     LazyColumn(
@@ -372,10 +392,10 @@ private fun YearsView(ui: LibraryUi, years: List<Pair<Int, List<Media>>>, months
     val scope = rememberCoroutineScope()
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    LaunchedEffect(years.isNotEmpty(), ui.filter) {
+    LaunchedEffect(years.isNotEmpty(), ui.filter, ui.newestFirst) {
         if (years.isNotEmpty() && LibMode.Years !in ui.initialized) {
             ui.initialized += LibMode.Years
-            ui.yearsState.scrollToItem(years.lastIndex)
+            ui.yearsState.scrollToItem(if (ui.newestFirst) 0 else years.lastIndex)
         }
     }
     LazyColumn(
