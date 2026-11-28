@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         window.isNavigationBarContrastEnforced = false
-        useFastestRefreshRate()
+        useHighRefreshRate()
         val store = PhotosStore.get(this)
         val viewUri = if (intent?.action == Intent.ACTION_VIEW) intent.data else null
         val viewType = intent?.type ?: viewUri?.let { contentResolver.getType(it) } ?: ""
@@ -47,22 +47,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        useHighRefreshRate()
         PhotosStore.get(this).resumeTick++
     }
 
-    /** Ask for the screen's highest refresh rate (90/120 Hz) at the current resolution, so everything moves smoothly. */
-    private fun useFastestRefreshRate() {
-        runCatching {
-            val d = if (android.os.Build.VERSION.SDK_INT >= 30) display else @Suppress("DEPRECATION") windowManager.defaultDisplay
-            d ?: return
-            val cur = d.mode
-            val best = d.supportedModes
-                .filter { it.physicalWidth == cur.physicalWidth && it.physicalHeight == cur.physicalHeight }
-                .maxByOrNull { it.refreshRate } ?: return
-            window.attributes = window.attributes.apply {
-                preferredDisplayModeId = best.modeId
-                preferredRefreshRate = best.refreshRate
-            }
-        }
-    }
 }

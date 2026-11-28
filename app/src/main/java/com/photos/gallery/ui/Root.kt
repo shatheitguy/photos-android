@@ -125,7 +125,8 @@ private fun MainScaffold(
     val tablet = isTablet()
     var paneAlbum by remember { mutableStateOf<AlbumRef?>(null) }
     BackHandler(enabled = nav.canPop) { nav.pop() }
-    BackHandler(enabled = tablet && !nav.canPop && (paneAlbum != null || tab != PhotosTab.Library)) {
+    // Back from Albums or Search goes to the Library tab instead of leaving the app.
+    BackHandler(enabled = !nav.canPop && (paneAlbum != null || tab != PhotosTab.Library)) {
         paneAlbum = null
         tab = PhotosTab.Library
     }
