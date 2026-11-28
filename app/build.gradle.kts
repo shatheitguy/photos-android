@@ -12,8 +12,8 @@ android {
         applicationId = "com.photos.gallery"
         minSdk = 29
         targetSdk = 35
-        versionCode = 26
-        versionName = "1.0.3"
+        versionCode = 27
+        versionName = "1.0.4"
     }
 
     buildTypes {

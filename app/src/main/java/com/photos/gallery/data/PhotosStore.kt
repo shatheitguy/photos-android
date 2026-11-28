@@ -60,10 +60,52 @@ class PhotosStore private constructor(private val app: Context) {
     }
     val memories: List<Memory> by derivedStateOf { Memories.build(library) }
     val featured: List<Media> by derivedStateOf { Memories.featured(library) }
-    val duplicates: List<Media> by derivedStateOf {
-        library.filter { !it.isVideo && it.size > 0 }
-            .groupBy { Triple(it.size, it.width, it.height) }
-            .values.filter { it.size > 1 }.flatten().sortedBy { it.dateTaken }
+    /** Sets of photos whose files are byte-for-byte the same. The first of each set is the one to keep. */
+    private var dupSets by mutableStateOf<List<List<Media>>>(emptyList())
+    val dupGroups: List<List<Media>> by derivedStateOf {
+        val h = hidden
+        dupSets.map { g -> g.filter { it.id !in h } }.filter { it.size > 1 }
+    }
+    val duplicates: List<Media> by derivedStateOf { dupGroups.flatten() }
+    private val hashCache = HashMap<String, String>()
+
+    /** Same size and dimensions first (cheap), then the file contents are compared so only true copies count. */
+    private suspend fun findDuplicates(items: List<Media>) {
+        val sets = withContext(Dispatchers.IO) {
+            items.filter { !it.isVideo && it.size > 0 }
+                .groupBy { Triple(it.size, it.width, it.height) }
+                .values.filter { it.size > 1 }
+                .flatMap { same -> same.groupBy { hashOf(it) }.filterKeys { it != null }.values.filter { it.size > 1 } }
+                .map { g -> g.sortedWith(keepFirst) }
+                .sortedByDescending { it.first().dateTaken }
+        }
+        dupSets = sets
+    }
+
+    /** The copy to keep: one in the camera folder, then the oldest, then the one without "(1)" / "copy" in its name. */
+    private val keepFirst = compareByDescending<Media> { it.relPath.startsWith("DCIM/", true) }
+        .thenBy { it.dateTaken }
+        .thenBy { Regex("""\(\d+\)|copy""", RegexOption.IGNORE_CASE).containsMatchIn(it.name) }
+        .thenBy { it.name.length }
+        .thenBy { it.id }
+
+    private fun hashOf(m: Media): String? {
+        val key = "${m.id}:${m.size}"
+        synchronized(hashCache) { hashCache[key]?.let { return it } }
+        val h = runCatching {
+            val md = java.security.MessageDigest.getInstance("SHA-256")
+            app.contentResolver.openInputStream(m.uri)!!.use { input ->
+                val buf = ByteArray(64 * 1024)
+                while (true) {
+                    val n = input.read(buf)
+                    if (n < 0) break
+                    md.update(buf, 0, n)
+                }
+            }
+            md.digest().joinToString("") { "%02x".format(it) }
+        }.getOrNull() ?: return null
+        synchronized(hashCache) { hashCache[key] = h }
+        return h
     }
 
     fun itemsFor(ref: AlbumRef): List<Media> = when (ref.kind) {
@@ -120,6 +162,7 @@ class PhotosStore private constructor(private val app: Context) {
         all = items
         trash = trashed
         loaded = true
+        findDuplicates(items)
     }
 
     private fun query(collection: Uri, video: Boolean, trashed: Boolean): List<Media> {

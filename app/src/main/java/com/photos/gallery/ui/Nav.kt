@@ -194,6 +194,16 @@ class MediaActions(
         confirm = Confirm(msg, "Delete ${noun(items)}", true) { then(); perform { trashNow(items) } }
     }
 
+    /** Keeps the first photo of each set and moves the other copies to Recently Deleted. */
+    fun merge(groups: List<List<Media>>) {
+        val extra = groups.flatMap { it.drop(1) }
+        if (extra.isEmpty()) return
+        val copies = if (extra.size == 1) "1 copy" else "${extra.size} copies"
+        val msg = if (groups.size == 1) "One photo will be kept and the other $copies will be moved to Recently Deleted."
+        else "One photo from each of the ${groups.size} sets will be kept and the other $copies will be moved to Recently Deleted."
+        confirm = Confirm(msg, if (extra.size == 1) "Delete 1 Copy" else "Delete ${extra.size} Copies", true) { perform { trashNow(extra) } }
+    }
+
     private fun trashNow(items: List<Media>) {
         try {
             val sender = if (Build.VERSION.SDK_INT >= 30) store.trashRequest(items, true) else store.deleteRequest(items)

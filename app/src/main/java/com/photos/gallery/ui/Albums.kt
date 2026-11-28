@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
@@ -157,6 +158,7 @@ private fun emptyMessage(kind: Kind): String = when (kind) {
 
 @Composable
 fun AlbumScreen(ref: AlbumRef, onBack: () -> Unit) {
+    if (ref.kind == Kind.Duplicates) return DuplicatesScreen(ref, onBack)
     val store = LocalStore.current
     val nav = LocalNav.current
     val c = LocalIos.current
@@ -218,3 +220,83 @@ fun AlbumScreen(ref: AlbumRef, onBack: () -> Unit) {
     }
 }
 
+
+/**
+ * Duplicates, like iOS: each set of identical photos is shown together with the copy that will be kept marked.
+ * Merge keeps that one and moves only the other copies to Recently Deleted.
+ */
+@Composable
+private fun DuplicatesScreen(ref: AlbumRef, onBack: () -> Unit) {
+    val store = LocalStore.current
+    val nav = LocalNav.current
+    val actions = LocalActions.current
+    val c = LocalIos.current
+    val groups = store.dupGroups
+    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    Box(Modifier.fillMaxSize().background(c.bg)) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = top + 56.dp, bottom = bottom + 24.dp),
+        ) {
+            if (groups.isNotEmpty()) item(key = "note") {
+                Text(
+                    "Merging keeps the copy marked Keep and moves the other copies to Recently Deleted.",
+                    fontSize = 13.sp, color = c.secondary, textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 10.dp),
+                )
+            }
+            items(groups, key = { g -> g.joinToString(",") { it.id.toString() } }) { g ->
+                Column(Modifier.fillMaxWidth().padding(top = 14.dp)) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("${g.size} Exact Copies", fontSize = 17.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = c.label)
+                            Text("${Fmt.dayTitle(g.first().date)} · ${Fmt.size(g.first().size)} each", fontSize = 13.sp, color = c.secondary)
+                        }
+                        Pill("Merge") { actions.merge(listOf(g)) }
+                    }
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 10.dp),
+                    ) {
+                        items(g, key = { it.id }) { m ->
+                            Column(Modifier.width(118.dp)) {
+                                Box(
+                                    Modifier.size(118.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                                        .tap { nav.push(Route.Viewer(ref, m.id)) },
+                                ) {
+                                    Thumb(m, Modifier.fillMaxSize(), 400)
+                                    if (m === g.first()) Text(
+                                        "Keep", color = androidx.compose.ui.graphics.Color.White, fontSize = 12.sp,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                        modifier = Modifier.align(Alignment.BottomStart).padding(6.dp)
+                                            .clip(androidx.compose.foundation.shape.CircleShape).background(c.accent)
+                                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                                    )
+                                }
+                                Text(
+                                    m.bucket.ifBlank { m.relPath.trimEnd('/').substringAfterLast('/') }.ifBlank { m.name },
+                                    fontSize = 12.sp, color = c.secondary, maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                            }
+                        }
+                    }
+                    Box(Modifier.padding(start = 16.dp, top = 14.dp).fillMaxWidth().height(0.5.dp).background(c.separator))
+                }
+            }
+        }
+        if (store.loaded && groups.isEmpty()) {
+            Column(Modifier.align(Alignment.Center).padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("No Duplicates", style = IosType.title2, color = c.label)
+                Spacer(Modifier.height(6.dp))
+                Text(emptyMessage(ref.kind), fontSize = 15.sp, color = c.secondary, textAlign = TextAlign.Center)
+            }
+        }
+        NavTopBar(ref.title, "Back", backUnlessRoot(onBack)) {
+            if (groups.size > 1) Pill("Merge All") { actions.merge(groups) }
+        }
+    }
+}
