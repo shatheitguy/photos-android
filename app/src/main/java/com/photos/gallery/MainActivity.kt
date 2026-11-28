@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
                     when {
                         viewUri == null -> PhotosRoot(store)
                         mediaId != null && !fallback && accessLevel(this) > 0 ->
-                            PhotosRoot(store, mediaId, onOpenFailed = { fallback = true }, onOpenedClosed = { finish() })
+                            PhotosRoot(store, mediaId, viewUri, onOpenFailed = { fallback = true }, onOpenedClosed = { finish() })
                         else -> ExternalViewer(viewUri, viewType) { finish() }
                     }
                 }

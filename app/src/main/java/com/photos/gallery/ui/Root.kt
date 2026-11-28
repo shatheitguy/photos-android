@@ -67,7 +67,7 @@ fun accessLevel(ctx: Context): Int {
 }
 
 @Composable
-fun PhotosRoot(store: PhotosStore, openId: Long? = null, onOpenFailed: () -> Unit = {}, onOpenedClosed: () -> Unit = {}) {
+fun PhotosRoot(store: PhotosStore, openId: Long? = null, openUri: android.net.Uri? = null, onOpenFailed: () -> Unit = {}, onOpenedClosed: () -> Unit = {}) {
     val ctx = LocalContext.current
     var access by remember { mutableIntStateOf(accessLevel(ctx)) }
     val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -97,7 +97,7 @@ fun PhotosRoot(store: PhotosStore, openId: Long? = null, onOpenFailed: () -> Uni
     if (access == 0) {
         PermissionScreen { permLauncher.launch(mediaPermissions()) }
     } else {
-        MainScaffold(store, limited = access == 1, openId, onOpenFailed, onOpenedClosed) { permLauncher.launch(mediaPermissions()) }
+        MainScaffold(store, limited = access == 1, openId, openUri, onOpenFailed, onOpenedClosed) { permLauncher.launch(mediaPermissions()) }
     }
 }
 
@@ -106,6 +106,7 @@ private fun MainScaffold(
     store: PhotosStore,
     limited: Boolean,
     openId: Long?,
+    openUri: android.net.Uri?,
     onOpenFailed: () -> Unit,
     onOpenedClosed: () -> Unit,
     onManage: () -> Unit,
@@ -136,7 +137,7 @@ private fun MainScaffold(
         val m = store.library.firstOrNull { it.id == openId }
         if (m == null) { onOpenFailed(); return@LaunchedEffect }
         opened = true
-        nav.push(Route.Viewer(AlbumRef(Kind.Bucket, m.bucket, m.bucketId), m.id))
+        nav.push(Route.Viewer(AlbumRef(Kind.Bucket, m.bucket, m.bucketId), m.id), instant = true)
     }
     if (openId != null && opened) {
         LaunchedEffect(nav.stack.isEmpty()) { if (nav.stack.isEmpty()) onOpenedClosed() }
@@ -144,7 +145,12 @@ private fun MainScaffold(
 
     CompositionLocalProvider(LocalNav provides nav, LocalActions provides actions, LocalUpdates provides updates) {
         Box(Modifier.fillMaxSize().background(c.bg)) {
-          if (tablet) {
+          if (openId != null) {
+            // Opened from another app (the camera, Files…): show the photo at once instead of the
+            // library, so nothing flashes while the library loads behind it.
+            OpenCover(openUri)
+            nav.stack.forEach { e -> key(e.id) { RouteHost(e, nav) } }
+          } else if (tablet) {
             SplitLayout(
                 sidebar = {
                     PhotosSidebar(
@@ -225,7 +231,7 @@ private fun MainScaffold(
 @Composable
 private fun RouteHost(entry: NavEntry, nav: Nav) {
     val slide = entry.route is Route.Album || entry.route is Route.AllAlbums || entry.route is Route.Settings
-    val progress = remember { Animatable(0f) }
+    val progress = remember { Animatable(if (entry.instant) 1f else 0f) }
     LaunchedEffect(entry.closing) {
         if (entry.closing) progress.animateTo(0f, tween(220, easing = FastOutLinearInEasing))
         else progress.animateTo(1f, tween(if (slide) 420 else 280, easing = androidx.compose.animation.core.CubicBezierEasing(0.22f, 1f, 0.36f, 1f)))
@@ -250,6 +256,22 @@ private fun RouteHost(entry: NavEntry, nav: Nav) {
             is Route.Story -> StoryScreen(r.memory) { nav.pop() }
             is Route.Editor -> EditorScreen(r.media) { nav.pop() }
             is Route.Settings -> PhotosSettingsScreen(r.about) { nav.pop() }
+        }
+    }
+}
+
+@Composable
+private fun OpenCover(uri: android.net.Uri?) {
+    val c = LocalIos.current
+    Box(Modifier.fillMaxSize().background(c.bg)) {
+        if (uri != null) {
+            val img = com.photos.gallery.data.rememberThumbnail(uri, 512)
+            if (img != null) {
+                androidx.compose.foundation.Image(
+                    img, null, Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                )
+            }
         }
     }
 }

@@ -35,7 +35,7 @@ sealed interface Route {
     data class Settings(val about: Boolean = false) : Route
 }
 
-class NavEntry(val id: Int, val route: Route) {
+class NavEntry(val id: Int, val route: Route, val instant: Boolean = false) {
     var closing by mutableStateOf(false)
 }
 
@@ -44,8 +44,9 @@ class Nav(private val scope: CoroutineScope) {
     private var nextId = 0
     val canPop: Boolean get() = stack.any { !it.closing }
 
-    fun push(route: Route) {
-        stack.add(NavEntry(nextId++, route))
+    /** [instant] shows the screen straight away, without the opening animation. */
+    fun push(route: Route, instant: Boolean = false) {
+        stack.add(NavEntry(nextId++, route, instant))
     }
 
     fun pop() {
